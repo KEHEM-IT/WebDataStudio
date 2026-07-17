@@ -1,5 +1,5 @@
-import type { RuntimeMessage } from '@types/messages';
-import type { DetectionCandidate } from '@types/detection';
+import type { RuntimeMessage } from '@dtypes/messages';
+import type { DetectionCandidate } from '@dtypes/detection';
 import { generateId } from '@core/utils/id';
 
 const els = {

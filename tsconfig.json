@@ -19,7 +19,7 @@
     "paths": {
       "@/*": ["src/*"],
       "@core/*": ["src/core/*"],
-      "@types/*": ["src/core/types/*"]
+      "@dtypes/*": ["src/core/types/*"]
     }
   },
   "include": ["src"]

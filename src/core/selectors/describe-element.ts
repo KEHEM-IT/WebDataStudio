@@ -1,4 +1,4 @@
-import type { ElementDescriptor } from '@types/element';
+import type { ElementDescriptor } from '@dtypes/element';
 import { generateSelector, buildXPath } from './selector-generator';
 import { normalizeWhitespace } from '@core/utils/text';
 

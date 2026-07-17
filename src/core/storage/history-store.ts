@@ -1,4 +1,4 @@
-import type { ExtractionResult } from '@types/extraction';
+import type { ExtractionResult } from '@dtypes/extraction';
 
 const HISTORY_KEY = 'wds:history';
 const BOOKMARKS_KEY = 'wds:bookmarks';

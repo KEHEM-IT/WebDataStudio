@@ -1,4 +1,4 @@
-import type { LibrarySignature } from '@types/detection';
+import type { LibrarySignature } from '@dtypes/detection';
 
 /** Class/attribute fingerprints for popular grid & table libraries.
  *  Order matters — more specific signatures are checked first. */

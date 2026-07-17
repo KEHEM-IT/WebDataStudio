@@ -1,4 +1,4 @@
-import type { SelectorCandidate } from '@types/element';
+import type { SelectorCandidate } from '@dtypes/element';
 
 /** Attributes that make a strong, re-render-stable selector when present. */
 const STABLE_DATA_ATTRS = ['data-testid', 'data-test', 'data-qa', 'data-id', 'data-key', 'id'];

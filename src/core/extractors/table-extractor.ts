@@ -1,6 +1,7 @@
-import type { DataColumn, DataRow, ExtractionResult, ExtractionStats } from '@types/extraction';
+import type { DataColumn, DataRow, ExtractionResult } from '@dtypes/extraction';
 import { generateId } from '@core/utils/id';
 import { normalizeWhitespace } from '@core/utils/text';
+import { computeStats } from '@core/utils/stats';
 import { toCellValue } from './type-inference';
 
 function cellText(cell: Element): string {
@@ -115,43 +116,5 @@ export function extractTable(root: Element): ExtractionResult {
     columns,
     rows,
     stats
-  };
-}
-
-function computeStats(columns: DataColumn[], rows: DataRow[], elapsedMs: number): ExtractionStats {
-  let emptyCellCount = 0;
-  let imageCount = 0;
-  let linkCount = 0;
-  const seen = new Set<string>();
-  let duplicateRowCount = 0;
-
-  for (const row of rows) {
-    const parts: string[] = [];
-    for (const col of columns) {
-      const cell = row[col.name];
-      if (!cell) continue;
-      if (cell.type === 'null' || cell.raw.length === 0) emptyCellCount += 1;
-      if (cell.src) imageCount += 1;
-      if (cell.href) linkCount += 1;
-      parts.push(cell.raw);
-    }
-    const key = parts.join('|');
-    if (seen.has(key)) duplicateRowCount += 1;
-    seen.add(key);
-  }
-
-  const cellCount = rows.length * columns.length;
-  const estimatedExportBytes = JSON.stringify(rows).length;
-
-  return {
-    rowCount: rows.length,
-    columnCount: columns.length,
-    cellCount,
-    emptyCellCount,
-    duplicateRowCount,
-    imageCount,
-    linkCount,
-    extractionTimeMs: Math.round(elapsedMs),
-    estimatedExportBytes
   };
 }

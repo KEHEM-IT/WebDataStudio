@@ -1,4 +1,4 @@
-import type { DetectionCandidate } from '@types/detection';
+import type { DetectionCandidate } from '@dtypes/detection';
 import { describeElement } from '@core/selectors/describe-element';
 import { detectLibrary } from './library-signatures';
 import { generateId } from '@core/utils/id';

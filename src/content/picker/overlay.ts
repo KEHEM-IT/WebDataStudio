@@ -1,5 +1,5 @@
 import { describeElement } from '@core/selectors/describe-element';
-import type { ElementDescriptor } from '@types/element';
+import type { ElementDescriptor } from '@dtypes/element';
 
 const HIGHLIGHT_ID = 'wds-picker-highlight';
 const LABEL_ID = 'wds-picker-label';

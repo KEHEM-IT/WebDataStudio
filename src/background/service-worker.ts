@@ -1,4 +1,4 @@
-import type { RuntimeMessage } from '@types/messages';
+import type { RuntimeMessage } from '@dtypes/messages';
 
 const CONTEXT_MENU_ID = 'wds-open-studio';
 

@@ -1,4 +1,4 @@
-import type { DetectionCandidate, DetectionScanOptions } from '@types/detection';
+import type { DetectionCandidate, DetectionScanOptions } from '@dtypes/detection';
 import { detectTables } from './native-table-detector';
 import { detectRepeatedPatterns } from './pattern-detector';
 

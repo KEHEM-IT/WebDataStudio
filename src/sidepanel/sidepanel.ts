@@ -1,6 +1,6 @@
-import type { RuntimeMessage } from '@types/messages';
-import type { DetectionCandidate } from '@types/detection';
-import type { ExtractionResult, CellValue } from '@types/extraction';
+import type { RuntimeMessage } from '@dtypes/messages';
+import type { DetectionCandidate } from '@dtypes/detection';
+import type { ExtractionResult, CellValue } from '@dtypes/extraction';
 import { exportAs, type ExportFormat } from '@core/exporters';
 import { addHistoryEntry, listHistory, removeHistoryEntry } from '@core/storage';
 import { generateId } from '@core/utils/id';

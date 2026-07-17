@@ -1,8 +1,29 @@
 import './content.css';
-import type { RuntimeMessage } from '@types/messages';
+import type { RuntimeMessage } from '@dtypes/messages';
 import { scanPage } from '@core/detection/scanner';
 import { extractTable } from '@core/extractors/table-extractor';
+import { extractRepeated } from '@core/extractors/repeated-extractor';
+import type { DetectionCandidate } from '@dtypes/detection';
 import { ElementPicker } from './picker/overlay';
+
+/** Routes a resolved root element to the extractor matching its detected kind. */
+function runExtractor(root: Element, kind: DetectionCandidate['kind']) {
+  switch (kind) {
+    case 'html-table':
+    case 'div-table':
+    case 'data-grid-lib':
+      return extractTable(root);
+    case 'list':
+      return extractRepeated(root, 'list');
+    case 'card-grid':
+      return extractRepeated(root, 'card');
+    case 'form':
+    case 'tree':
+    case 'unknown':
+    default:
+      return extractRepeated(root, 'custom');
+  }
+}
 
 const picker = new ElementPicker(
   (descriptor) => {
@@ -52,7 +73,7 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResp
         return false;
       }
       try {
-        const result = extractTable(root);
+        const result = runExtractor(root, message.kind);
         result.rootSelector = message.rootSelector;
         const okRes: RuntimeMessage = { type: 'EXTRACT_RESULT', requestId: message.requestId, result };
         sendResponse(okRes);

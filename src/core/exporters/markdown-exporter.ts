@@ -1,4 +1,4 @@
-import type { ExtractionResult } from '@types/extraction';
+import type { ExtractionResult } from '@dtypes/extraction';
 
 function escapePipe(value: string): string {
   return value.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');

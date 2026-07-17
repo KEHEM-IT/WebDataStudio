@@ -1,4 +1,4 @@
-import type { ExtractionResult } from '@types/extraction';
+import type { ExtractionResult } from '@dtypes/extraction';
 
 /** Plain-value rows: header name -> primitive cell value (no type metadata). */
 function toPlainRows(result: ExtractionResult): Array<Record<string, string | number | boolean | null>> {

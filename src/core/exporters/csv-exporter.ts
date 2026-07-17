@@ -1,4 +1,4 @@
-import type { ExtractionResult } from '@types/extraction';
+import type { ExtractionResult } from '@dtypes/extraction';
 
 function escapeCsvCell(value: string, delimiter: string): string {
   if (value.includes(delimiter) || value.includes('"') || value.includes('\n') || value.includes('\r')) {

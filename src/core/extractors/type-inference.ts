@@ -1,4 +1,4 @@
-import type { CellValue, InferredDataType } from '@types/extraction';
+import type { CellValue, InferredDataType } from '@dtypes/extraction';
 
 const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RE_URL = /^(https?:\/\/|www\.)[^\s]+$/i;
