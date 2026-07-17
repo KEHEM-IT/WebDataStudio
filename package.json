@@ -8,14 +8,16 @@
     "dev": "node scripts/dev.mjs",
     "build": "tsc --noEmit && node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src",
     "format": "prettier --write \"src/**/*.ts\""
   },
   "devDependencies": {
+    "@eslint/js": "^8.57.0",
     "@types/chrome": "^0.0.270",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.0",
+    "globals": "^13.24.0",
     "prettier": "^3.3.3",
     "typescript": "^5.5.4",
     "vite": "^5.4.0"

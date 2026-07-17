@@ -1,5 +1,13 @@
 import type { SelectorCandidate } from '@dtypes/element';
 
+function matchCountOf(selector: string): number {
+  try {
+    return document.querySelectorAll(selector).length;
+  } catch {
+    return 0;
+  }
+}
+
 /** Attributes that make a strong, re-render-stable selector when present. */
 const STABLE_DATA_ATTRS = ['data-testid', 'data-test', 'data-qa', 'data-id', 'data-key', 'id'];
 
@@ -86,4 +94,30 @@ export function generateSelector(el: Element): string {
   const classSel = stableClassSelector(el);
   if (classSel && isUniqueInDocument(classSel)) return classSel;
   return buildPathSelector(el);
+}
+
+/** Public API: generate every viable selector strategy for an element,
+ *  ranked by stability, for the DOM Inspector's "alternate selectors" view. */
+export function generateSelectorCandidates(el: Element): SelectorCandidate[] {
+  const candidates: SelectorCandidate[] = [];
+  const seen = new Set<string>();
+
+  const push = (selector: string | null, kind: SelectorCandidate['kind'], stability: number): void => {
+    if (!selector || seen.has(selector)) return;
+    seen.add(selector);
+    const matchCount = matchCountOf(selector);
+    if (matchCount === 0) return;
+    candidates.push({ selector, matchCount, stability, kind });
+  };
+
+  for (const attr of STABLE_DATA_ATTRS) {
+    const sel = attrSelector(el, attr);
+    push(sel, attr === 'id' ? 'id' : 'data-attribute', attr === 'id' ? 0.95 : 0.9);
+  }
+
+  push(stableClassSelector(el), 'class-combo', 0.6);
+  push(buildPathSelector(el), 'nth-child', 0.5);
+  push(buildXPath(el), 'xpath', 0.3);
+
+  return candidates.sort((a, b) => b.stability - a.stability || a.matchCount - b.matchCount);
 }

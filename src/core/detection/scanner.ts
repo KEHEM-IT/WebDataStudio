@@ -1,6 +1,7 @@
 import type { DetectionCandidate, DetectionScanOptions } from '@dtypes/detection';
 import { detectTables } from './native-table-detector';
 import { detectRepeatedPatterns } from './pattern-detector';
+import { detectLibraryGrids } from '@/content/detectors/library-grid-detector';
 
 const DEFAULT_OPTIONS: DetectionScanOptions = {
   includeShadowDom: false,
@@ -16,12 +17,15 @@ export function scanPage(options: Partial<DetectionScanOptions> = {}): Detection
   const opts: DetectionScanOptions = { ...DEFAULT_OPTIONS, ...options };
 
   const tableCandidates = detectTables(opts.minItemCount);
-  const claimedSelectors = new Set(tableCandidates.map((c) => c.element.cssSelector));
+  const libraryCandidates = detectLibraryGrids(opts.minItemCount, opts.maxCandidates);
+  const claimedSelectors = new Set(
+    [...tableCandidates, ...libraryCandidates].map((c) => c.element.cssSelector)
+  );
 
   const patternCandidates = detectRepeatedPatterns(opts.minItemCount, opts.maxCandidates)
     .filter((c) => !claimedSelectors.has(c.element.cssSelector));
 
-  const all = [...tableCandidates, ...patternCandidates]
+  const all = [...tableCandidates, ...libraryCandidates, ...patternCandidates]
     .sort((a, b) => b.confidence - a.confidence || b.approxItemCount - a.approxItemCount)
     .slice(0, opts.maxCandidates);
 
