@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Web Data Studio</title>
+  <link rel="stylesheet" href="assets/sidepanel.css" />
+</head>
+<body>
+  <div class="wds-app">
+    <header class="wds-header">
+      <h1>Web Data Studio</h1>
+      <div class="wds-header-actions">
+        <button id="btn-rescan" class="wds-btn wds-btn-sm">Rescan</button>
+        <button id="btn-pick" class="wds-btn wds-btn-sm">Pick element</button>
+      </div>
+    </header>
+
+    <nav class="wds-tabs" id="wds-tabs">
+      <button class="wds-tab active" data-tab="explorer">Explorer</button>
+      <button class="wds-tab" data-tab="preview">Preview</button>
+      <button class="wds-tab" data-tab="clean">Clean</button>
+      <button class="wds-tab" data-tab="export">Export</button>
+      <button class="wds-tab" data-tab="history">History</button>
+    </nav>
+
+    <main class="wds-main">
+      <section id="panel-explorer" class="wds-panel">
+        <p class="wds-hint">Candidates detected on the current page.</p>
+        <ul id="explorer-list" class="wds-list"></ul>
+      </section>
+
+      <section id="panel-preview" class="wds-panel" hidden>
+        <div id="preview-stats" class="wds-stats"></div>
+        <div class="wds-table-wrap">
+          <table id="preview-table" class="wds-table"></table>
+        </div>
+      </section>
+
+      <section id="panel-clean" class="wds-panel" hidden>
+        <div class="wds-clean-actions">
+          <button class="wds-btn" data-op="trim">Trim whitespace</button>
+          <button class="wds-btn" data-op="dedupe-rows">Remove duplicate rows</button>
+          <button class="wds-btn" data-op="remove-empty-rows">Remove blank rows</button>
+          <button class="wds-btn" data-op="remove-empty-cols">Remove blank columns</button>
+          <button class="wds-btn" data-op="upper">UPPERCASE</button>
+          <button class="wds-btn" data-op="lower">lowercase</button>
+          <button class="wds-btn" data-op="title">Title Case</button>
+        </div>
+      </section>
+
+      <section id="panel-export" class="wds-panel" hidden>
+        <div class="wds-export-grid">
+          <button class="wds-btn" data-format="json">JSON</button>
+          <button class="wds-btn" data-format="jsonl">JSON Lines</button>
+          <button class="wds-btn" data-format="csv">CSV</button>
+          <button class="wds-btn" data-format="tsv">TSV</button>
+          <button class="wds-btn" data-format="markdown">Markdown</button>
+          <button class="wds-btn" data-format="html">HTML</button>
+        </div>
+        <textarea id="export-preview" class="wds-export-preview" readonly></textarea>
+        <div class="wds-export-actions">
+          <button id="btn-copy" class="wds-btn wds-btn-primary">Copy</button>
+          <button id="btn-download" class="wds-btn wds-btn-primary">Download</button>
+        </div>
+      </section>
+
+      <section id="panel-history" class="wds-panel" hidden>
+        <ul id="history-list" class="wds-list"></ul>
+      </section>
+    </main>
+
+    <p id="wds-status" class="wds-status"></p>
+  </div>
+  <script src="sidepanel.js"></script>
+</body>
+</html>
