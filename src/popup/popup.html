@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Web Data Studio</title>
+  <link rel="stylesheet" href="assets/popup.css" />
+</head>
+<body>
+  <main class="wds-popup">
+    <header>
+      <h1>Web Data Studio</h1>
+      <p id="wds-page-title" class="wds-subtle">—</p>
+    </header>
+
+    <section class="wds-actions">
+      <button id="btn-scan" class="wds-btn wds-btn-primary">Scan this page</button>
+      <button id="btn-picker" class="wds-btn">Pick an element</button>
+      <button id="btn-studio" class="wds-btn">Open Studio</button>
+    </section>
+
+    <section id="wds-results" class="wds-results" hidden>
+      <h2>Detected data</h2>
+      <ul id="wds-candidate-list" class="wds-candidate-list"></ul>
+    </section>
+
+    <p id="wds-status" class="wds-status"></p>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
