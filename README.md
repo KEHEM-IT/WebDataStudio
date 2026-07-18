@@ -20,7 +20,7 @@ Detect tables, cards, lists and grids on any website, preview them in a live edi
 ## 🎬 Demo
 
 <p align="center">
-  <img src="docs/images/demo.mp4" alt="Web Data Studio 10s demo" width="800" />
+  <img src="docs/images/demo.gif" alt="Web Data Studio 10s demo" width="800" />
 </p>
 
 🎥 **Full feature walkthrough:** [Watch the video](docs/videos/full-feature-walkthrough.mp4) <!-- swap this for a YouTube link if you host it there instead -->
