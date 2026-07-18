@@ -15,12 +15,24 @@
       </div>
     </header>
 
-    <nav class="wds-tabs" id="wds-tabs">
-      <button class="wds-tab active" data-tab="explorer">Explorer</button>
-      <button class="wds-tab" data-tab="preview">Preview</button>
-      <button class="wds-tab" data-tab="export">Export</button>
-      <button class="wds-tab" data-tab="history">History</button>
-    </nav>
+    <div class="wds-tabs-row">
+      <nav class="wds-tabs" id="wds-tabs">
+        <button class="wds-tab active" data-tab="explorer">Explorer</button>
+        <button class="wds-tab" data-tab="preview">Preview</button>
+        <button class="wds-tab" data-tab="files">Files</button>
+        <button class="wds-tab" data-tab="export">Export</button>
+        <button class="wds-tab" data-tab="history">History</button>
+      </nav>
+      <div class="wds-tabs-search">
+        <input
+          type="search"
+          id="wds-search"
+          class="wds-search-input"
+          placeholder="Search candidates…"
+          aria-label="Search"
+        />
+      </div>
+    </div>
 
     <main class="wds-main">
       <section id="panel-explorer" class="wds-panel">
@@ -41,6 +53,21 @@
           <button class="wds-btn" data-op="lower">lowercase</button>
           <button class="wds-btn" data-op="title">Title Case</button>
         </div>
+      </section>
+
+      <section id="panel-files" class="wds-panel" hidden>
+        <p class="wds-hint">Every image, video, audio and file resource found on this page.</p>
+        <div id="files-stats" class="wds-stats"></div>
+        <div class="wds-files-actions">
+          <button id="btn-files-rescan" class="wds-btn">Rescan files</button>
+          <button id="btn-files-pick" class="wds-btn">Pick element</button>
+          <button id="btn-files-select-all" class="wds-btn">Select all</button>
+          <button id="btn-files-select-none" class="wds-btn">Select none</button>
+          <button id="btn-files-zip-selected" class="wds-btn wds-btn-primary">Zip selected</button>
+          <button id="btn-files-zip-all" class="wds-btn wds-btn-primary">Zip everything</button>
+        </div>
+        <div id="files-progress" class="wds-hint" hidden></div>
+        <div id="files-groups" class="wds-files-groups"></div>
       </section>
 
       <section id="panel-export" class="wds-panel" hidden>
@@ -69,6 +96,7 @@
 
     <p id="wds-status" class="wds-status"></p>
   </div>
+  <img id="wds-file-preview" class="wds-file-preview" alt="" />
   <script src="sidepanel.js"></script>
 </body>
 </html>

@@ -29,11 +29,36 @@ body {
 .wds-header h1 { font-size: 14px; margin: 0; }
 .wds-header-actions { display: flex; gap: 6px; }
 
+.wds-tabs-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--wds-border);
+  padding-right: 8px;
+}
 .wds-tabs {
   display: flex;
-  border-bottom: 1px solid var(--wds-border);
   overflow-x: auto;
+  min-width: 0;
 }
+.wds-tabs-search { display: flex; align-items: center; padding: 6px 0; }
+.wds-search-input {
+  width: 140px;
+  padding: 5px 8px;
+  font-size: 12px;
+  border: 1px solid var(--wds-border);
+  border-radius: 6px;
+  background: var(--wds-surface);
+  color: var(--wds-fg);
+}
+.wds-search-input:focus {
+  outline: 2px solid var(--wds-primary);
+  outline-offset: -1px;
+  border-color: var(--wds-primary);
+  background: var(--wds-bg);
+}
+.wds-search-input::-webkit-search-cancel-button { cursor: pointer; }
 .wds-tab {
   padding: 8px 12px;
   border: none;
@@ -91,7 +116,15 @@ body {
   padding: 3px 6px;
 }
 
-.wds-table-wrap { overflow: auto; border: 1px solid var(--wds-border); border-radius: 6px; max-height: 60vh; }
+.wds-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--wds-border);
+  border-radius: 6px;
+  height: 60vh;
+  min-height: 120px;
+  max-height: 85vh;
+  resize: vertical;
+}
 .wds-table { border-collapse: collapse; width: 100%; font-size: 12px; }
 .wds-table th, .wds-table td {
   border-bottom: 1px solid var(--wds-border);
@@ -168,6 +201,65 @@ body {
 
 .wds-export-actions { display: flex; gap: 6px; margin-top: 8px; }
 
+.wds-files-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.wds-files-groups { display: flex; flex-direction: column; gap: 12px; }
+
+.wds-file-group {
+  border: 1px solid var(--wds-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.wds-file-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background: var(--wds-surface);
+  font-size: 12px;
+  font-weight: 600;
+}
+.wds-file-group-header .count { font-weight: 400; color: var(--wds-subtle); margin-left: 6px; }
+.wds-file-group-body { max-height: 260px; overflow-y: auto; }
+
+.wds-file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--wds-border);
+  font-size: 12px;
+}
+.wds-file-item:first-child { border-top: none; }
+.wds-file-item .thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--wds-surface);
+  flex-shrink: 0;
+}
+.wds-file-item .name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wds-file-item .ext {
+  color: var(--wds-subtle);
+  font-size: 10px;
+  border: 1px solid var(--wds-border);
+  border-radius: 4px;
+  padding: 1px 4px;
+  flex-shrink: 0;
+}
+
 .wds-status {
   margin: 0;
   padding: 6px 12px;
@@ -175,4 +267,53 @@ body {
   color: var(--wds-subtle);
   border-top: 1px solid var(--wds-border);
   min-height: 26px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+
+@keyframes wds-spin { to { transform: rotate(360deg); } }
+
+.wds-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border: 2px solid rgba(99, 102, 241, 0.25);
+  border-top-color: var(--wds-primary);
+  border-radius: 50%;
+  animation: wds-spin 0.6s linear infinite;
+}
+
+.wds-btn.is-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+.wds-btn.is-loading .wds-spinner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: -6px 0 0 -6px;
+  border-color: rgba(17, 24, 39, 0.2);
+  border-top-color: var(--wds-fg);
+}
+.wds-btn-primary.is-loading .wds-spinner {
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+}
+
+.wds-file-preview {
+  position: fixed;
+  z-index: 999999;
+  display: none;
+  max-width: 320px;
+  max-height: 320px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--wds-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+.wds-file-preview.visible { display: block; }

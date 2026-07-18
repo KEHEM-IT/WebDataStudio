@@ -1,8 +1,10 @@
 import type { RuntimeMessage } from '@dtypes/messages';
 import type { DetectionCandidate } from '@dtypes/detection';
 import type { ExtractionResult, CellValue } from '@dtypes/extraction';
+import type { ResourceScanResult, ResourceItem, ResourceCategory } from '@dtypes/resource';
 import { exportAs, type ExportFormat } from '@core/exporters';
 import { addHistoryEntry, listHistory, removeHistoryEntry } from '@core/storage';
+import { buildResourceZip, downloadBlob } from '@core/resources/zip-builder';
 import { generateId } from '@core/utils/id';
 import { normalizeWhitespace, toTitleCase } from '@core/utils/text';
 
@@ -17,20 +19,64 @@ const els = {
   exportPreview: document.getElementById('export-preview') as HTMLTextAreaElement,
   copyBtn: document.getElementById('btn-copy') as HTMLButtonElement,
   downloadBtn: document.getElementById('btn-download') as HTMLButtonElement,
-  historyList: document.getElementById('history-list') as HTMLUListElement
+  historyList: document.getElementById('history-list') as HTMLUListElement,
+  search: document.getElementById('wds-search') as HTMLInputElement,
+  filesStats: document.getElementById('files-stats') as HTMLDivElement,
+  filesGroups: document.getElementById('files-groups') as HTMLDivElement,
+  filesProgress: document.getElementById('files-progress') as HTMLDivElement,
+  filesRescan: document.getElementById('btn-files-rescan') as HTMLButtonElement,
+  filesPick: document.getElementById('btn-files-pick') as HTMLButtonElement,
+  filesSelectAll: document.getElementById('btn-files-select-all') as HTMLButtonElement,
+  filesSelectNone: document.getElementById('btn-files-select-none') as HTMLButtonElement,
+  filesZipSelected: document.getElementById('btn-files-zip-selected') as HTMLButtonElement,
+  filesZipAll: document.getElementById('btn-files-zip-all') as HTMLButtonElement,
+  filePreview: document.getElementById('wds-file-preview') as HTMLImageElement
 };
 
 let currentResult: ExtractionResult | null = null;
 let currentExportFormat: ExportFormat = 'json';
+let currentResources: ResourceScanResult | null = null;
+const selectedResourceUrls = new Set<string>();
 
-function setStatus(text: string): void {
-  els.status.textContent = text;
+function setStatus(text: string, loading = false): void {
+  if (!loading) {
+    els.status.textContent = text;
+    return;
+  }
+  els.status.innerHTML = '';
+  const spinner = document.createElement('span');
+  spinner.className = 'wds-spinner';
+  els.status.append(spinner, document.createTextNode(text));
+}
+
+/** Shows a spinner in place of a button's label and disables it while an
+ *  async action (rescan, extraction, etc.) is in flight. */
+function setButtonLoading(btn: HTMLButtonElement, loading: boolean): void {
+  btn.classList.toggle('is-loading', loading);
+  btn.disabled = loading;
+  if (loading) {
+    if (!btn.querySelector('.wds-spinner')) {
+      const spinner = document.createElement('span');
+      spinner.className = 'wds-spinner';
+      btn.appendChild(spinner);
+    }
+  } else {
+    btn.querySelector('.wds-spinner')?.remove();
+  }
 }
 
 async function getActiveTab(): Promise<chrome.tabs.Tab | undefined> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab;
 }
+
+const SEARCH_PLACEHOLDERS: Record<string, string> = {
+  explorer: 'Search candidates…',
+  preview: 'Search rows…',
+  files: 'Search files…',
+  export: 'Search formats…',
+  history: 'Search history…'
+};
 
 function switchTab(name: string): void {
   document.querySelectorAll<HTMLButtonElement>('.wds-tab').forEach((btn) => {
@@ -39,14 +85,63 @@ function switchTab(name: string): void {
   document.querySelectorAll<HTMLElement>('.wds-panel').forEach((panel) => {
     panel.hidden = panel.id !== `panel-${name}`;
   });
+  // Search is scoped to whichever tab is active, so switching tabs starts
+  // with a clean slate rather than applying a stale query to new content.
+  els.search.value = '';
+  els.search.placeholder = SEARCH_PLACEHOLDERS[name] ?? 'Search…';
   if (name === 'history') void renderHistory();
   if (name === 'export') renderExportPreview();
+  if (name === 'files' && !currentResources) void scanFiles();
+  applySearchFilter();
 }
 
 els.tabs.addEventListener('click', (e) => {
   const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.wds-tab');
   if (btn?.dataset.tab) switchTab(btn.dataset.tab);
 });
+
+function currentActiveTab(): string {
+  return document.querySelector<HTMLButtonElement>('.wds-tab.active')?.dataset.tab ?? 'explorer';
+}
+
+/** Live-filters whichever list/table/buttons belong to the active tab.
+ *  Re-run after any render*() call so edits, rescans, or format switches
+ *  don't silently drop an in-progress search term. */
+function applySearchFilter(): void {
+  const query = els.search.value.trim().toLowerCase();
+  const tab = currentActiveTab();
+
+  if (tab === 'explorer') {
+    els.explorerList.querySelectorAll<HTMLLIElement>('li').forEach((li) => {
+      li.hidden = query.length > 0 && !(li.textContent ?? '').toLowerCase().includes(query);
+    });
+  } else if (tab === 'preview') {
+    els.previewTable.querySelectorAll<HTMLTableRowElement>('tbody tr').forEach((tr) => {
+      tr.hidden = query.length > 0 && !(tr.textContent ?? '').toLowerCase().includes(query);
+    });
+  } else if (tab === 'history') {
+    els.historyList.querySelectorAll<HTMLLIElement>('li').forEach((li) => {
+      li.hidden = query.length > 0 && !(li.textContent ?? '').toLowerCase().includes(query);
+    });
+  } else if (tab === 'export') {
+    document.querySelectorAll<HTMLButtonElement>('.wds-export-grid [data-format]').forEach((btn) => {
+      btn.hidden = query.length > 0 && !(btn.textContent ?? '').toLowerCase().includes(query);
+    });
+  } else if (tab === 'files') {
+    const anyVisibleInGroup = new Map<HTMLElement, boolean>();
+    els.filesGroups.querySelectorAll<HTMLElement>('.wds-file-item').forEach((item) => {
+      const match = query.length === 0 || (item.textContent ?? '').toLowerCase().includes(query);
+      item.hidden = !match;
+      const group = item.closest<HTMLElement>('.wds-file-group');
+      if (group) anyVisibleInGroup.set(group, (anyVisibleInGroup.get(group) ?? false) || match);
+    });
+    els.filesGroups.querySelectorAll<HTMLElement>('.wds-file-group').forEach((group) => {
+      group.hidden = query.length > 0 && !anyVisibleInGroup.get(group);
+    });
+  }
+}
+
+els.search.addEventListener('input', applySearchFilter);
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c] ?? c);
@@ -77,6 +172,22 @@ function renderExplorer(candidates: DetectionCandidate[]): void {
     li.addEventListener('click', () => void extractCandidate(candidate));
     els.explorerList.appendChild(li);
   }
+  applySearchFilter();
+}
+
+/** Clears all in-memory session state (extracted result, preview, export
+ *  preview, file scan, selections) so a rescan starts clean instead of
+ *  mixing stale data from a previous page/extraction. History lives in
+ *  chrome.storage.local (see history-store.ts) and is untouched by this. */
+function resetSessionState(): void {
+  currentResult = null;
+  currentResources = null;
+  selectedResourceUrls.clear();
+  renderPreview();
+  els.previewStats.innerHTML = '';
+  els.previewTable.innerHTML = '';
+  renderExportPreview();
+  renderFiles();
 }
 
 async function rescan(): Promise<void> {
@@ -85,7 +196,9 @@ async function rescan(): Promise<void> {
     setStatus('No active tab.');
     return;
   }
-  setStatus('Scanning page…');
+  setButtonLoading(els.rescan, true);
+  setStatus('Scanning page…', true);
+  resetSessionState();
   try {
     const message: RuntimeMessage = { type: 'SCAN_PAGE', requestId: generateId('req') };
     const response = (await chrome.tabs.sendMessage(tab.id, message)) as RuntimeMessage;
@@ -97,15 +210,22 @@ async function rescan(): Promise<void> {
     }
   } catch {
     setStatus('Could not reach this page (try refreshing it first).');
+  } finally {
+    setButtonLoading(els.rescan, false);
   }
 }
 
-async function startPicker(): Promise<void> {
+let pickerMode: 'extract' | 'files' = 'extract';
+
+async function startPicker(mode: 'extract' | 'files' = 'extract'): Promise<void> {
   const tab = await getActiveTab();
   if (!tab?.id) return;
+  pickerMode = mode;
   const message: RuntimeMessage = { type: 'PICKER_START' };
   await chrome.tabs.sendMessage(tab.id, message).catch(() => setStatus('Could not start picker on this page.'));
-  setStatus('Click an element on the page to select it…');
+  setStatus(
+    mode === 'files' ? 'Click an element on the page to scan its files…' : 'Click an element on the page to select it…'
+  );
 }
 
 async function extractCandidate(candidate: DetectionCandidate): Promise<void> {
@@ -189,6 +309,7 @@ function renderPreview(): void {
     )
     .join('')}</tbody>`;
   els.previewTable.innerHTML = thead + tbody;
+  applySearchFilter();
 }
 
 function commitCellEdit(td: HTMLTableCellElement): void {
@@ -437,10 +558,250 @@ async function renderHistory(): Promise<void> {
     li.appendChild(del);
     els.historyList.appendChild(li);
   }
+  applySearchFilter();
 }
 
+const CATEGORY_ORDER: ResourceCategory[] = ['image', 'video', 'audio', 'other'];
+const CATEGORY_LABELS: Record<ResourceCategory, string> = {
+  image: 'Images',
+  video: 'Video (incl. m3u8/mpd streams)',
+  audio: 'Audio',
+  other: 'Other files'
+};
+
+function groupResources(items: ResourceItem[]): Map<ResourceCategory, ResourceItem[]> {
+  const groups = new Map<ResourceCategory, ResourceItem[]>();
+  for (const cat of CATEGORY_ORDER) groups.set(cat, []);
+  for (const item of items) groups.get(item.category)?.push(item);
+  return groups;
+}
+
+function renderFilesStats(): void {
+  if (!currentResources) {
+    els.filesStats.innerHTML = '';
+    return;
+  }
+  const groups = groupResources(currentResources.items);
+  els.filesStats.innerHTML = CATEGORY_ORDER.map(
+    (cat) => `<span>${CATEGORY_LABELS[cat].split(' (')[0]}: ${groups.get(cat)?.length ?? 0}</span>`
+  ).join('');
+}
+
+function fileItemHtml(item: ResourceItem): string {
+  const thumb =
+    item.category === 'image'
+      ? `<img class="thumb" src="${escapeAttr(item.url)}" loading="lazy" alt="" />`
+      : `<span class="thumb"></span>`;
+  return `<label class="wds-file-item" title="${escapeAttr(item.url)}">
+    <input type="checkbox" class="wds-file-check" data-url="${escapeAttr(item.url)}" ${
+      selectedResourceUrls.has(item.url) ? 'checked' : ''
+    } />
+    ${thumb}
+    <span class="name">${escapeHtml(item.filename)}</span>
+    <span class="ext">${escapeHtml(item.ext || item.category)}</span>
+    <button type="button" class="wds-btn wds-btn-sm" data-download-url="${escapeAttr(item.url)}" data-download-name="${escapeAttr(
+      item.filename
+    )}">Save</button>
+  </label>`;
+}
+
+function renderFiles(): void {
+  if (!currentResources) {
+    els.filesGroups.innerHTML = '<p class="wds-hint">No scan yet — click Rescan files.</p>';
+    return;
+  }
+  renderFilesStats();
+  const groups = groupResources(currentResources.items);
+  els.filesGroups.innerHTML = CATEGORY_ORDER.filter((cat) => (groups.get(cat)?.length ?? 0) > 0)
+    .map((cat) => {
+      const items = groups.get(cat) ?? [];
+      return `<div class="wds-file-group">
+        <div class="wds-file-group-header">
+          <span>${CATEGORY_LABELS[cat]}<span class="count"> · ${items.length}</span></span>
+          <button type="button" class="wds-btn wds-btn-sm" data-zip-category="${cat}">Zip this group</button>
+        </div>
+        <div class="wds-file-group-body">${items.map(fileItemHtml).join('')}</div>
+      </div>`;
+    })
+    .join('');
+  if (currentResources.items.length === 0) {
+    els.filesGroups.innerHTML = '<p class="wds-hint">No downloadable resources found on this page.</p>';
+  }
+  applySearchFilter();
+}
+
+async function scanFiles(): Promise<void> {
+  const tab = await getActiveTab();
+  if (!tab?.id) {
+    setStatus('No active tab.');
+    return;
+  }
+  setButtonLoading(els.filesRescan, true);
+  setStatus('Scanning files…', true);
+  try {
+    const message: RuntimeMessage = { type: 'SCAN_FILES_REQUEST', requestId: generateId('req') };
+    const response = (await chrome.tabs.sendMessage(tab.id, message)) as RuntimeMessage;
+    if (response?.type === 'SCAN_FILES_RESULT') {
+      currentResources = response.result;
+      selectedResourceUrls.clear();
+      renderFiles();
+      setStatus(`Found ${response.result.items.length} file resource(s).`);
+    } else {
+      setStatus('File scan failed to return results.');
+    }
+  } catch {
+    setStatus('Could not reach this page (try refreshing it first).');
+  } finally {
+    setButtonLoading(els.filesRescan, false);
+  }
+}
+
+// 'error' doesn't bubble, so this must be registered with useCapture to
+// catch broken thumbnails via delegation instead of one listener per <img>.
+els.filesGroups.addEventListener(
+  'error',
+  (e) => {
+    const img = e.target as HTMLElement;
+    if (img.tagName === 'IMG') img.style.visibility = 'hidden';
+  },
+  true
+);
+
+const PREVIEW_MARGIN = 16;
+const PREVIEW_MAX = 320;
+
+function positionFilePreview(x: number, y: number): void {
+  let left = x + PREVIEW_MARGIN;
+  let top = y + PREVIEW_MARGIN;
+  if (left + PREVIEW_MAX > window.innerWidth) left = x - PREVIEW_MAX - PREVIEW_MARGIN;
+  if (top + PREVIEW_MAX > window.innerHeight) top = y - PREVIEW_MAX - PREVIEW_MARGIN;
+  els.filePreview.style.left = `${Math.max(4, left)}px`;
+  els.filePreview.style.top = `${Math.max(4, top)}px`;
+}
+
+// mouseover/mouseout (unlike mouseenter/mouseleave) bubble, so a single pair
+// of delegated listeners on the container covers every thumbnail, including
+// ones added later by a rescan.
+els.filesGroups.addEventListener('mouseover', (e) => {
+  const img = (e.target as HTMLElement).closest<HTMLImageElement>('img.thumb');
+  if (!img?.src) return;
+  els.filePreview.src = img.src;
+  els.filePreview.classList.add('visible');
+  positionFilePreview(e.clientX, e.clientY);
+});
+
+els.filesGroups.addEventListener('mousemove', (e) => {
+  if (!els.filePreview.classList.contains('visible')) return;
+  positionFilePreview(e.clientX, e.clientY);
+});
+
+els.filesGroups.addEventListener('mouseout', (e) => {
+  const img = (e.target as HTMLElement).closest<HTMLImageElement>('img.thumb');
+  if (!img) return;
+  els.filePreview.classList.remove('visible');
+  els.filePreview.removeAttribute('src');
+});
+
+els.filesGroups.addEventListener('change', (e) => {
+  const check = (e.target as HTMLElement).closest<HTMLInputElement>('.wds-file-check');
+  if (!check?.dataset.url) return;
+  if (check.checked) selectedResourceUrls.add(check.dataset.url);
+  else selectedResourceUrls.delete(check.dataset.url);
+});
+
+els.filesGroups.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement;
+  const dl = target.closest<HTMLButtonElement>('[data-download-url]');
+  if (dl?.dataset.downloadUrl) {
+    e.preventDefault();
+    void chrome.downloads.download({ url: dl.dataset.downloadUrl, filename: dl.dataset.downloadName, saveAs: false });
+    return;
+  }
+  const zipCatBtn = target.closest<HTMLButtonElement>('[data-zip-category]');
+  if (zipCatBtn?.dataset.zipCategory) {
+    e.preventDefault();
+    const cat = zipCatBtn.dataset.zipCategory as ResourceCategory;
+    const items = currentResources?.items.filter((it) => it.category === cat) ?? [];
+    void zipAndDownload(items, `web-data-studio-${cat}s.zip`);
+  }
+});
+
+function setFilesProgress(text: string | null): void {
+  els.filesProgress.hidden = !text;
+  els.filesProgress.textContent = text ?? '';
+}
+
+async function zipAndDownload(items: ResourceItem[], zipFilename: string): Promise<void> {
+  if (items.length === 0) {
+    setStatus('Nothing to zip.');
+    return;
+  }
+  setFilesProgress(`Zipping 0 / ${items.length}…`);
+  try {
+    const { blob, failed } = await buildResourceZip(items, (p) => setFilesProgress(`Zipping ${p.done} / ${p.total}…`));
+    downloadBlob(blob, zipFilename);
+    setStatus(
+      failed.length > 0
+        ? `Zip downloaded — ${failed.length} file(s) could not be fetched and were skipped.`
+        : `Zip downloaded with ${items.length} file(s).`
+    );
+  } catch {
+    setStatus('Zip creation failed.');
+  } finally {
+    setFilesProgress(null);
+  }
+}
+
+async function scanFilesInElement(selector: string): Promise<void> {
+  const tab = await getActiveTab();
+  if (!tab?.id) return;
+  setButtonLoading(els.filesPick, true);
+  setStatus('Scanning selected element…', true);
+  try {
+    const message: RuntimeMessage = {
+      type: 'SCAN_FILES_IN_ELEMENT_REQUEST',
+      requestId: generateId('req'),
+      rootSelector: selector
+    };
+    const response = (await chrome.tabs.sendMessage(tab.id, message)) as RuntimeMessage;
+    if (response?.type === 'SCAN_FILES_RESULT') {
+      currentResources = response.result;
+      selectedResourceUrls.clear();
+      renderFiles();
+      setStatus(`Found ${response.result.items.length} file resource(s) in the selected element.`);
+    } else if (response?.type === 'SCAN_FILES_IN_ELEMENT_ERROR') {
+      setStatus(response.message);
+    } else {
+      setStatus('Element file scan failed to return results.');
+    }
+  } catch {
+    setStatus('Could not reach this page (try refreshing it first).');
+  } finally {
+    setButtonLoading(els.filesPick, false);
+  }
+}
+
+els.filesRescan.addEventListener('click', () => void scanFiles());
+els.filesPick.addEventListener('click', () => void startPicker('files'));
+els.filesSelectAll.addEventListener('click', () => {
+  if (!currentResources) return;
+  for (const item of currentResources.items) selectedResourceUrls.add(item.url);
+  renderFiles();
+});
+els.filesSelectNone.addEventListener('click', () => {
+  selectedResourceUrls.clear();
+  renderFiles();
+});
+els.filesZipSelected.addEventListener('click', () => {
+  const items = currentResources?.items.filter((it) => selectedResourceUrls.has(it.url)) ?? [];
+  void zipAndDownload(items, 'web-data-studio-selected.zip');
+});
+els.filesZipAll.addEventListener('click', () => {
+  void zipAndDownload(currentResources?.items ?? [], 'web-data-studio-all-files.zip');
+});
+
 els.rescan.addEventListener('click', () => void rescan());
-els.pick.addEventListener('click', () => void startPicker());
+els.pick.addEventListener('click', () => void startPicker('extract'));
 
 async function extractSelectedElement(selector: string): Promise<void> {
   const tab = await getActiveTab();
@@ -463,7 +824,8 @@ async function extractSelectedElement(selector: string): Promise<void> {
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage) => {
   if (message.type === 'PICKER_SELECT') {
-    void extractSelectedElement(message.element.cssSelector);
+    if (pickerMode === 'files') void scanFilesInElement(message.element.cssSelector);
+    else void extractSelectedElement(message.element.cssSelector);
   }
 });
 
