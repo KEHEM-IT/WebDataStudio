@@ -18,7 +18,6 @@
     <nav class="wds-tabs" id="wds-tabs">
       <button class="wds-tab active" data-tab="explorer">Explorer</button>
       <button class="wds-tab" data-tab="preview">Preview</button>
-      <button class="wds-tab" data-tab="clean">Clean</button>
       <button class="wds-tab" data-tab="export">Export</button>
       <button class="wds-tab" data-tab="history">History</button>
     </nav>
@@ -34,14 +33,10 @@
         <div class="wds-table-wrap">
           <table id="preview-table" class="wds-table"></table>
         </div>
-      </section>
-
-      <section id="panel-clean" class="wds-panel" hidden>
+        <p class="wds-hint">Click a cell to edit it. Use the × buttons to delete a row or column.</p>
         <div class="wds-clean-actions">
           <button class="wds-btn" data-op="trim">Trim whitespace</button>
           <button class="wds-btn" data-op="dedupe-rows">Remove duplicate rows</button>
-          <button class="wds-btn" data-op="remove-empty-rows">Remove blank rows</button>
-          <button class="wds-btn" data-op="remove-empty-cols">Remove blank columns</button>
           <button class="wds-btn" data-op="upper">UPPERCASE</button>
           <button class="wds-btn" data-op="lower">lowercase</button>
           <button class="wds-btn" data-op="title">Title Case</button>

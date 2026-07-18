@@ -142,9 +142,9 @@ function cellText(cell: CellValue | undefined): string {
   return cell ? cell.raw : '';
 }
 
-function renderPreview(): void {
+function renderStatsBar(): void {
   if (!currentResult) return;
-  const { columns, rows, stats } = currentResult;
+  const { stats } = currentResult;
   els.previewStats.innerHTML = [
     `Rows: ${stats.rowCount}`,
     `Columns: ${stats.columnCount}`,
@@ -157,19 +157,134 @@ function renderPreview(): void {
   ]
     .map((s) => `<span>${escapeHtml(s)}</span>`)
     .join('');
+}
 
-  const thead = `<thead><tr>${columns.map((c) => `<th>${escapeHtml(c.name)}</th>`).join('')}</tr></thead>`;
+function renderPreview(): void {
+  if (!currentResult) return;
+  const { columns, rows } = currentResult;
+  renderStatsBar();
+
+  const thead = `<thead><tr><th class="wds-col-actions"></th>${columns
+    .map(
+      (c) =>
+        `<th><span class="wds-th-name" contenteditable="true" data-col="${escapeAttr(
+          c.name
+        )}" title="${escapeAttr(c.name)}">${escapeHtml(c.name)}</span><button class="wds-th-del" data-del-col="${escapeAttr(
+          c.name
+        )}" title="Delete column">×</button></th>`
+    )
+    .join('')}</tr></thead>`;
   const tbody = `<tbody>${rows
     .slice(0, 500)
     .map(
-      (row) =>
-        `<tr>${columns
-          .map((c) => `<td title="${escapeAttr(cellText(row[c.name]))}">${escapeHtml(cellText(row[c.name]))}</td>`)
+      (row, i) =>
+        `<tr><td class="wds-row-actions"><button class="wds-td-del" data-del-row="${i}" title="Delete row">×</button></td>${columns
+          .map(
+            (c) =>
+              `<td contenteditable="true" data-row="${i}" data-col="${escapeAttr(
+                c.name
+              )}" title="${escapeAttr(cellText(row[c.name]))}">${escapeHtml(cellText(row[c.name]))}</td>`
+          )
           .join('')}</tr>`
     )
     .join('')}</tbody>`;
   els.previewTable.innerHTML = thead + tbody;
 }
+
+function commitCellEdit(td: HTMLTableCellElement): void {
+  if (!currentResult) return;
+  const rowIndex = Number(td.dataset.row);
+  const colName = td.dataset.col ?? '';
+  const row = currentResult.rows[rowIndex];
+  if (!row || !colName) return;
+  const newText = td.textContent ?? '';
+  const cell: CellValue = row[colName] ?? { raw: '', value: '', type: 'string' };
+  cell.raw = newText;
+  if (typeof cell.value !== 'number' && typeof cell.value !== 'boolean') cell.value = newText;
+  row[colName] = cell;
+  td.title = newText;
+  recomputeStats();
+  renderStatsBar();
+}
+
+function commitHeaderEdit(span: HTMLElement): void {
+  if (!currentResult) return;
+  const oldName = span.dataset.col ?? '';
+  const col = currentResult.columns.find((c) => c.name === oldName);
+  if (!col) return;
+
+  const typed = normalizeWhitespace(span.textContent ?? '');
+  if (!typed || typed === oldName) {
+    // Empty or unchanged — snap the DOM back to the current name rather than
+    // leaving a blank/whitespace-only header floating in the UI.
+    renderPreview();
+    return;
+  }
+
+  // Column names double as row keys, so a rename must stay unique or later
+  // lookups (row[col.name]) would collide with an existing column.
+  const taken = new Set(currentResult.columns.map((c) => c.name));
+  let finalName = typed;
+  let suffix = 2;
+  while (taken.has(finalName) && finalName !== oldName) {
+    finalName = `${typed}_${suffix}`;
+    suffix += 1;
+  }
+
+  col.name = finalName;
+  col.originalHeader = finalName;
+  col.synthetic = false;
+  for (const row of currentResult.rows) {
+    if (oldName in row) {
+      row[finalName] = row[oldName]!;
+      if (finalName !== oldName) delete row[oldName];
+    }
+  }
+
+  renderPreview();
+  setStatus(`Column renamed to "${finalName}".`);
+}
+
+function deleteRow(index: number): void {
+  if (!currentResult) return;
+  currentResult.rows.splice(index, 1);
+  recomputeStats();
+  renderPreview();
+  setStatus(`Row deleted — now ${currentResult.stats.rowCount} rows.`);
+}
+
+function deleteColumn(name: string): void {
+  if (!currentResult) return;
+  currentResult.columns = currentResult.columns.filter((c) => c.name !== name);
+  for (const row of currentResult.rows) delete row[name];
+  recomputeStats();
+  renderPreview();
+  setStatus(`Column deleted — now ${currentResult.stats.columnCount} columns.`);
+}
+
+els.previewTable.addEventListener('focusout', (e) => {
+  const target = e.target as HTMLElement;
+  const th = target.closest<HTMLElement>('.wds-th-name');
+  if (th) {
+    commitHeaderEdit(th);
+    return;
+  }
+  const td = target.closest<HTMLTableCellElement>('td[data-col]');
+  if (td) commitCellEdit(td);
+});
+
+els.previewTable.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement;
+  const delRowBtn = target.closest<HTMLElement>('[data-del-row]');
+  if (delRowBtn) {
+    deleteRow(Number(delRowBtn.dataset.delRow));
+    return;
+  }
+  const delColBtn = target.closest<HTMLElement>('[data-del-col]');
+  if (delColBtn?.dataset.delCol) {
+    deleteColumn(delColBtn.dataset.delCol);
+  }
+});
 
 function recomputeStats(): void {
   if (!currentResult) return;
@@ -201,8 +316,8 @@ function recomputeStats(): void {
   currentResult.stats.linkCount = linkCount;
 }
 
-function applyCellTransform(fn: (raw: string) => string): void {
-  if (!currentResult) return;
+function applyCellTransform(fn: (raw: string) => string): boolean {
+  if (!currentResult) return false;
   for (const row of currentResult.rows) {
     for (const col of currentResult.columns) {
       const cell = row[col.name];
@@ -213,10 +328,11 @@ function applyCellTransform(fn: (raw: string) => string): void {
   }
   recomputeStats();
   renderPreview();
+  return true;
 }
 
-function dedupeRows(): void {
-  if (!currentResult) return;
+function dedupeRows(): boolean {
+  if (!currentResult) return false;
   const seen = new Set<string>();
   const cols = currentResult.columns;
   currentResult.rows = currentResult.rows.filter((row) => {
@@ -227,54 +343,38 @@ function dedupeRows(): void {
   });
   recomputeStats();
   renderPreview();
-}
-
-function removeEmptyRows(): void {
-  if (!currentResult) return;
-  const cols = currentResult.columns;
-  currentResult.rows = currentResult.rows.filter((row) =>
-    cols.some((c) => (row[c.name]?.raw ?? '').trim() !== '')
-  );
-  recomputeStats();
-  renderPreview();
-}
-
-function removeEmptyColumns(): void {
-  if (!currentResult) return;
-  const rows = currentResult.rows;
-  currentResult.columns = currentResult.columns.filter((c) =>
-    rows.some((row) => (row[c.name]?.raw ?? '').trim() !== '')
-  );
-  recomputeStats();
-  renderPreview();
+  return true;
 }
 
 document.querySelectorAll<HTMLButtonElement>('[data-op]').forEach((btn) => {
   btn.addEventListener('click', () => {
+    if (!currentResult) {
+      setStatus('Extract or select data first, then clean it here.');
+      return;
+    }
+    let applied = false;
     switch (btn.dataset.op) {
       case 'trim':
-        applyCellTransform(normalizeWhitespace);
+        applied = applyCellTransform(normalizeWhitespace);
         break;
       case 'dedupe-rows':
-        dedupeRows();
-        break;
-      case 'remove-empty-rows':
-        removeEmptyRows();
-        break;
-      case 'remove-empty-cols':
-        removeEmptyColumns();
+        applied = dedupeRows();
         break;
       case 'upper':
-        applyCellTransform((s) => s.toUpperCase());
+        applied = applyCellTransform((s) => s.toUpperCase());
         break;
       case 'lower':
-        applyCellTransform((s) => s.toLowerCase());
+        applied = applyCellTransform((s) => s.toLowerCase());
         break;
       case 'title':
-        applyCellTransform(toTitleCase);
+        applied = applyCellTransform(toTitleCase);
         break;
     }
-    setStatus('Cleaning operation applied.');
+    if (applied && currentResult) {
+      setStatus(
+        `Cleaning applied — now ${currentResult.stats.rowCount} rows × ${currentResult.stats.columnCount} columns.`
+      );
+    }
   });
 });
 
@@ -367,11 +467,29 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage) => {
   }
 });
 
+// The panel can open (via popup's sidePanel.open() call, made early to keep
+// the user-gesture context) before the popup has finished extracting and
+// writing the result to session storage. init() below covers the case where
+// the result is already there; this listener covers the case where it lands
+// a moment later, after this panel has already checked and moved on.
+let pendingHandled = false;
+chrome.storage.session.onChanged?.addListener?.(
+  (changes: { [key: string]: chrome.storage.StorageChange }) => {
+    const change = changes['wds:pending-extraction'];
+    if (!change?.newValue || pendingHandled) return;
+    pendingHandled = true;
+    void chrome.storage.session.remove('wds:pending-extraction').then(() => {
+      void loadResult(change.newValue as ExtractionResult);
+    });
+  }
+);
+
 async function init(): Promise<void> {
   try {
     const pending = await chrome.storage.session.get('wds:pending-extraction');
     const stored = pending['wds:pending-extraction'] as ExtractionResult | undefined;
     if (stored) {
+      pendingHandled = true;
       await chrome.storage.session.remove('wds:pending-extraction');
       await loadResult(stored);
       return;
@@ -379,7 +497,11 @@ async function init(): Promise<void> {
   } catch {
     /* session storage unavailable — fall through to a fresh scan */
   }
-  void rescan();
+  // Give the popup's in-flight extraction (if any) a brief window to land via
+  // the onChanged listener above before falling back to a fresh scan.
+  setTimeout(() => {
+    if (!pendingHandled) void rescan();
+  }, 600);
 }
 
 void init();

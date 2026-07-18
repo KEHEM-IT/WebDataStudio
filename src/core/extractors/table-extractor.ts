@@ -82,8 +82,14 @@ export function extractTable(root: Element): ExtractionResult {
     const row: DataRow = {};
     columns.forEach((col, i) => {
       const cellEl = cells[i];
-      const raw = cellEl ? cellText(cellEl) : '';
-      row[col.name] = toCellValue(raw, cellEl ? richAttrsOf(cellEl) : undefined);
+      const attrs = cellEl ? richAttrsOf(cellEl) : undefined;
+      const text = cellEl ? cellText(cellEl) : '';
+      // When a cell has no visible text (e.g. a bare <img> or an icon-only
+      // <a>), fall back the displayed raw value to its link/image target so
+      // native <table> extraction surfaces file links the same way the
+      // repeated/list extractor already does.
+      const raw = text || attrs?.alt || attrs?.href || attrs?.src || '';
+      row[col.name] = toCellValue(raw, attrs);
     });
     return row;
   });

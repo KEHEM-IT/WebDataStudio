@@ -83,6 +83,21 @@ async function startPicker(): Promise<void> {
 async function extractAndOpenStudio(candidate: DetectionCandidate): Promise<void> {
   const tab = await getActiveTab();
   if (!tab?.id) return;
+
+  // chrome.sidePanel.open() must be called directly within the click's user
+  // gesture — routing it through a runtime message to the background service
+  // worker loses that gesture context and makes the call silently fail. So we
+  // open the panel first (still inside this click handler), then extract and
+  // hand the result off via session storage, which the panel's init() picks
+  // up (with a storage.onChanged fallback for the case where the panel is
+  // still loading when the result lands).
+  try {
+    await chrome.sidePanel.open({ tabId: tab.id });
+  } catch {
+    setStatus('Could not open the studio panel.');
+    return;
+  }
+
   setStatus('Extracting…');
   const message: RuntimeMessage = {
     type: 'EXTRACT_REQUEST',
@@ -94,7 +109,7 @@ async function extractAndOpenStudio(candidate: DetectionCandidate): Promise<void
     const response = (await chrome.tabs.sendMessage(tab.id, message)) as RuntimeMessage;
     if (response?.type === 'EXTRACT_RESULT') {
       await chrome.storage.session.set({ 'wds:pending-extraction': response.result });
-      await openStudio();
+      window.close();
     } else if (response?.type === 'EXTRACT_ERROR') {
       setStatus(response.message);
     }
@@ -104,9 +119,14 @@ async function extractAndOpenStudio(candidate: DetectionCandidate): Promise<void
 }
 
 async function openStudio(): Promise<void> {
-  const message: RuntimeMessage = { type: 'OPEN_SIDE_PANEL' };
-  await chrome.runtime.sendMessage(message);
-  window.close();
+  const tab = await getActiveTab();
+  if (!tab?.id) return;
+  try {
+    await chrome.sidePanel.open({ tabId: tab.id });
+    window.close();
+  } catch {
+    setStatus('Could not open the studio panel.');
+  }
 }
 
 els.scanBtn.addEventListener('click', () => void scanActiveTab());

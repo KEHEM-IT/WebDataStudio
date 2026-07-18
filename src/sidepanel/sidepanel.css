@@ -104,6 +104,50 @@ body {
 }
 .wds-table th { background: var(--wds-surface); position: sticky; top: 0; }
 
+.wds-th-name {
+  display: inline-block;
+  cursor: text;
+  padding: 2px 4px;
+  border-radius: 4px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.wds-th-name:hover { background: rgba(99, 102, 241, 0.1); }
+.wds-th-name:focus {
+  outline: 2px solid var(--wds-primary);
+  outline-offset: -2px;
+  background: #eef2ff;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.wds-table td[contenteditable="true"] { cursor: text; }
+.wds-table td[contenteditable="true"]:hover { background: var(--wds-surface); }
+.wds-table td[contenteditable="true"]:focus {
+  outline: 2px solid var(--wds-primary);
+  outline-offset: -2px;
+  background: #eef2ff;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.wds-col-actions, .wds-row-actions { width: 24px; max-width: 24px; text-align: center !important; padding: 4px !important; }
+.wds-th-del, .wds-td-del {
+  border: none;
+  background: transparent;
+  color: var(--wds-subtle);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+.wds-th-del:hover, .wds-td-del:hover { background: #fee2e2; color: #dc2626; }
+
 .wds-clean-actions, .wds-export-grid {
   display: flex;
   flex-wrap: wrap;
