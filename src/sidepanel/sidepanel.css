@@ -100,6 +100,12 @@ body {
 .wds-btn-sm { padding: 4px 8px; font-size: 11px; }
 .wds-btn-primary { background: var(--wds-primary); color: #fff; border-color: var(--wds-primary); }
 .wds-btn-primary:hover { background: #4f46e5; }
+.wds-btn.is-active {
+  background: var(--wds-primary);
+  color: #fff;
+  border-color: var(--wds-primary);
+}
+.wds-btn.is-active:hover { background: #4f46e5; }
 
 .wds-stats {
   display: flex;
@@ -207,6 +213,14 @@ body {
   gap: 6px;
   margin-bottom: 10px;
 }
+
+.wds-history-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+.wds-history-actions .wds-btn:hover { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+.wds-history-actions .wds-btn:disabled { opacity: 0.5; cursor: default; pointer-events: none; }
 
 .wds-files-groups { display: flex; flex-direction: column; gap: 12px; }
 

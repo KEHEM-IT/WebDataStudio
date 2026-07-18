@@ -2,7 +2,37 @@ import type { RuntimeMessage } from '@dtypes/messages';
 
 const CONTEXT_MENU_ID = 'wds-open-studio';
 
-chrome.runtime.onInstalled.addListener(() => {
+/** Reloading/updating the extension invalidates every content script
+ *  already injected into open tabs (see resource-observer.ts) — Chrome
+ *  never re-injects into tabs that predate the reload, only into tabs
+ *  opened/navigated afterward. Re-running content.js here on every tab that
+ *  matches the manifest's content_scripts pattern removes the need to
+ *  manually refresh each tab after a dev rebuild.
+ *
+ *  This is a fresh script instance layered on top of the orphaned old one,
+ *  not a true hot-swap: the old instance's MutationObserver/listeners are
+ *  still technically present in the page, but they self-disconnect on their
+ *  next tick once they detect the invalidated context (see isContextValid()
+ *  in resource-observer.ts), so there's no lasting duplication. */
+async function reinjectContentScriptIntoOpenTabs(): Promise<void> {
+  let tabs: chrome.tabs.Tab[];
+  try {
+    tabs = await chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] });
+  } catch {
+    return;
+  }
+  for (const tab of tabs) {
+    if (!tab.id) continue;
+    try {
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
+    } catch {
+      // Restricted page (chrome://, Web Store, PDF viewer, etc.) — the
+      // manifest's content_scripts never ran here either. Skip.
+    }
+  }
+}
+
+chrome.runtime.onInstalled.addListener((details) => {
   chrome.contextMenus.create({
     id: CONTEXT_MENU_ID,
     title: 'Open Web Data Studio',
@@ -11,6 +41,10 @@ chrome.runtime.onInstalled.addListener(() => {
   // Keep the toolbar icon opening the popup by default; side panel is
   // opened explicitly via the OPEN_SIDE_PANEL message or its own command.
   void chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: false });
+
+  if (details.reason === 'update' || details.reason === 'install') {
+    void reinjectContentScriptIntoOpenTabs();
+  }
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {

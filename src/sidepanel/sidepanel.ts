@@ -1,9 +1,10 @@
 import type { RuntimeMessage } from '@dtypes/messages';
 import type { DetectionCandidate } from '@dtypes/detection';
+import type { ElementDescriptor } from '@dtypes/element';
 import type { ExtractionResult, CellValue } from '@dtypes/extraction';
 import type { ResourceScanResult, ResourceItem, ResourceCategory } from '@dtypes/resource';
 import { exportAs, type ExportFormat } from '@core/exporters';
-import { addHistoryEntry, listHistory, removeHistoryEntry } from '@core/storage';
+import { addHistoryEntry, listHistory, removeHistoryEntry, clearHistory } from '@core/storage';
 import { buildResourceZip, downloadBlob } from '@core/resources/zip-builder';
 import { generateId } from '@core/utils/id';
 import { normalizeWhitespace, toTitleCase } from '@core/utils/text';
@@ -20,6 +21,7 @@ const els = {
   copyBtn: document.getElementById('btn-copy') as HTMLButtonElement,
   downloadBtn: document.getElementById('btn-download') as HTMLButtonElement,
   historyList: document.getElementById('history-list') as HTMLUListElement,
+  historyClear: document.getElementById('btn-history-clear') as HTMLButtonElement,
   search: document.getElementById('wds-search') as HTMLInputElement,
   filesStats: document.getElementById('files-stats') as HTMLDivElement,
   filesGroups: document.getElementById('files-groups') as HTMLDivElement,
@@ -216,16 +218,61 @@ async function rescan(): Promise<void> {
 }
 
 let pickerMode: 'extract' | 'files' = 'extract';
+let pickerActive = false;
+let activePickerBtn: HTMLButtonElement | null = null;
 
+function setPickerButtonActive(btn: HTMLButtonElement | null, active: boolean): void {
+  btn?.classList.toggle('is-active', active);
+}
+
+/** Clicking a Pick element button starts the picker; clicking the SAME
+ *  button again (while it's still listening) cancels it instead of
+ *  restarting a fresh session. Clicking the OTHER pick button while one is
+ *  active switches modes rather than requiring an explicit cancel first. */
 async function startPicker(mode: 'extract' | 'files' = 'extract'): Promise<void> {
   const tab = await getActiveTab();
   if (!tab?.id) return;
+  const btn = mode === 'files' ? els.filesPick : els.pick;
+
+  if (pickerActive && pickerMode === mode) {
+    const message: RuntimeMessage = { type: 'PICKER_STOP' };
+    await chrome.tabs.sendMessage(tab.id, message).catch(() => {
+      /* content script already gone (e.g. navigated away) — nothing to stop */
+    });
+    pickerActive = false;
+    setPickerButtonActive(activePickerBtn, false);
+    activePickerBtn = null;
+    setStatus('Picker cancelled.');
+    return;
+  }
+
   pickerMode = mode;
+  setPickerButtonActive(activePickerBtn, false);
+  activePickerBtn = btn;
+  pickerActive = true;
+  setPickerButtonActive(btn, true);
   const message: RuntimeMessage = { type: 'PICKER_START' };
-  await chrome.tabs.sendMessage(tab.id, message).catch(() => setStatus('Could not start picker on this page.'));
+  await chrome.tabs.sendMessage(tab.id, message).catch(() => {
+    setStatus('Could not start picker on this page.');
+    pickerActive = false;
+    setPickerButtonActive(btn, false);
+    activePickerBtn = null;
+  });
   setStatus(
     mode === 'files' ? 'Click an element on the page to scan its files…' : 'Click an element on the page to select it…'
   );
+}
+
+/** The picker can also stop itself on the page side (Escape key, or right
+ *  after a click-select fires PICKER_SELECT) without the sidepanel telling
+ *  it to. overlay.ts's stop() always emits a PICKER_HOVER with a null
+ *  element as its last act, so that's the one signal that reliably covers
+ *  every stop path — use it to keep the button's active state in sync. */
+function handlePickerHover(element: ElementDescriptor | null): void {
+  if (element !== null) return;
+  pickerActive = false;
+  setPickerButtonActive(activePickerBtn, false);
+  activePickerBtn = null;
 }
 
 async function extractCandidate(candidate: DetectionCandidate): Promise<void> {
@@ -537,6 +584,7 @@ els.downloadBtn.addEventListener('click', () => {
 
 async function renderHistory(): Promise<void> {
   const entries = await listHistory();
+  els.historyClear.disabled = entries.length === 0;
   els.historyList.innerHTML = '';
   if (entries.length === 0) {
     els.historyList.innerHTML = '<li class="wds-hint">No extraction history yet.</li>';
@@ -560,6 +608,15 @@ async function renderHistory(): Promise<void> {
   }
   applySearchFilter();
 }
+
+els.historyClear.addEventListener('click', () => {
+  if (els.historyClear.disabled) return;
+  if (!confirm('Delete all extraction history? This cannot be undone.')) return;
+  void clearHistory().then(() => {
+    void renderHistory();
+    setStatus('History cleared.');
+  });
+});
 
 const CATEGORY_ORDER: ResourceCategory[] = ['image', 'video', 'audio', 'other'];
 const CATEGORY_LABELS: Record<ResourceCategory, string> = {
@@ -826,6 +883,8 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage) => {
   if (message.type === 'PICKER_SELECT') {
     if (pickerMode === 'files') void scanFilesInElement(message.element.cssSelector);
     else void extractSelectedElement(message.element.cssSelector);
+  } else if (message.type === 'PICKER_HOVER') {
+    handlePickerHover(message.element);
   }
 });
 
