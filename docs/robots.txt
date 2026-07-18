@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kehem-it.github.io/WebDataStudio/sitemap.xml

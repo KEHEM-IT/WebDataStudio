@@ -3,11 +3,106 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Web Data Studio — Documentation</title>
-<meta name="description" content="Web Data Studio: a visual web data extraction and transformation platform for Chrome. Pick, preview, clean, and export data from any page." />
+<title>Web Data Studio — Visual Web Data Extraction &amp; Export for Chrome</title>
+<meta name="description" content="Web Data Studio is a free, open-source Chrome extension for visually extracting tables, lists, cards and grids from any webpage, then cleaning, transforming, and exporting the data as JSON, CSV, TSV, Markdown, HTML, XML, YAML, or SQL. All local — no server, no tracking." />
+<meta name="keywords" content="web scraper, chrome extension, data extraction, table extractor, web scraping tool, JSON export, CSV export, DOM inspector, element picker, ETL, web data studio, visual scraper, no-code scraper" />
+<meta name="author" content="KEHEM-IT" />
+<meta name="application-name" content="Web Data Studio" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta name="theme-color" content="#0D1117" />
+<link rel="canonical" href="https://kehem-it.github.io/WebDataStudio/" />
+<link rel="sitemap" type="application/xml" href="sitemap.xml" />
+<link rel="alternate" type="text/plain" title="LLM-readable summary" href="llms.txt" />
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon32.png" />
 <link rel="icon" type="image/png" sizes="16x16" href="icons/icon16.png" />
 <link rel="apple-touch-icon" href="icons/icon128.png" />
+
+<!-- Open Graph (Facebook, LinkedIn, Discord, Slack, iMessage previews) -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://kehem-it.github.io/WebDataStudio/" />
+<meta property="og:site_name" content="Web Data Studio" />
+<meta property="og:title" content="Web Data Studio — Visual Web Data Extraction &amp; Export for Chrome" />
+<meta property="og:description" content="Pick, preview, clean, and export data from any page. Tables, cards, lists, and grids → JSON, CSV, TSV, Markdown, HTML, XML, YAML, or SQL. Free, open-source, and 100% local." />
+<meta property="og:image" content="https://kehem-it.github.io/WebDataStudio/images/banner.png" />
+<meta property="og:image:alt" content="Web Data Studio — Chrome extension overview screenshot" />
+<meta property="og:locale" content="en_US" />
+
+<!-- Twitter / X Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Web Data Studio — Visual Web Data Extraction &amp; Export for Chrome" />
+<meta name="twitter:description" content="Pick, preview, clean, and export tables, cards, lists, and grids from any webpage — JSON, CSV, TSV, Markdown, HTML, XML, YAML, SQL. Free, open-source, 100% local." />
+<meta name="twitter:image" content="https://kehem-it.github.io/WebDataStudio/images/banner.png" />
+
+<!-- Structured data: helps Google rich results and AI answer engines (ChatGPT, Claude,
+     Perplexity, Gemini) understand and cite this page accurately. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Web Data Studio",
+  "url": "https://kehem-it.github.io/WebDataStudio/",
+  "applicationCategory": "BrowserApplication",
+  "operatingSystem": "Chrome",
+  "description": "A visual web data extraction and transformation platform for Chrome. Detects tables, lists, cards and grids on any page, lets you pick them visually, clean and transform the data, then export as JSON, CSV, TSV, Markdown, HTML, XML, YAML, or SQL.",
+  "softwareVersion": "1.0.0",
+  "downloadUrl": "https://github.com/KEHEM-IT/WebDataStudio/releases/download/v1.0.0/dist.zip",
+  "installUrl": "https://github.com/KEHEM-IT/WebDataStudio/releases/latest",
+  "releaseNotes": "https://github.com/KEHEM-IT/WebDataStudio/releases",
+  "image": "https://kehem-it.github.io/WebDataStudio/images/banner.png",
+  "screenshot": "https://kehem-it.github.io/WebDataStudio/images/popup.png",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "KEHEM-IT",
+    "url": "https://github.com/KEHEM-IT"
+  },
+  "license": "https://github.com/KEHEM-IT/WebDataStudio/blob/main/LICENSE"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is Web Data Studio?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Web Data Studio is a free, open-source Chrome extension that visually detects and extracts tables, lists, cards, and grids from any webpage, then lets you clean, transform, and export the data locally — with no server and no tracking."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What formats can Web Data Studio export to?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Web Data Studio exports to JSON, JSON Lines, CSV, TSV, Markdown, HTML, XML, YAML, and SQL INSERT statements, with a live preview and one-click copy or download."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is Web Data Studio free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Web Data Studio is free and open source under the MIT License, distributed as a ready-to-use dist.zip on its GitHub Releases page."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Web Data Studio send my data anywhere?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. All detection, extraction, cleaning, and export happen locally inside your browser. Web Data Studio does not use a server and does not track usage."
+      }
+    }
+  ]
+}
+</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -121,12 +216,13 @@
           <a href="#screenshots" class="hover:text-teal transition-colors">screenshots</a>
           <a href="#install" class="hover:text-teal transition-colors">install</a>
           <a href="#roadmap" class="hover:text-teal transition-colors">roadmap</a>
+          <a href="#faq" class="hover:text-teal transition-colors">faq</a>
         </div>
         <div class="flex items-center gap-3">
           <a href="https://github.com/KEHEM-IT/WebDataStudio" class="hidden sm:inline-flex items-center gap-2 text-sm font-mono px-3 py-1.5 rounded-md border border-line text-paper hover:border-teal hover:text-teal transition-colors">
             <i class="fa-brands fa-github"></i> GitHub
           </a>
-          <a href="https://github.com/KEHEM-IT/WebDataStudio/releases/latest" class="inline-flex items-center gap-2 text-sm font-mono px-3 py-1.5 rounded-md bg-teal text-ink font-medium hover:brightness-110 transition">
+          <a href="https://github.com/KEHEM-IT/WebDataStudio/releases/download/v1.0.0/dist.zip" download class="inline-flex items-center gap-2 text-sm font-mono px-3 py-1.5 rounded-md bg-teal text-ink font-medium hover:brightness-110 transition">
             <i class="fa-solid fa-download"></i> Download
           </a>
         </div>
@@ -155,7 +251,7 @@
           no server, no tracking.
         </p>
         <div class="mt-8 flex flex-wrap items-center gap-3">
-          <a href="https://github.com/KEHEM-IT/WebDataStudio/releases/latest" class="inline-flex items-center gap-2 font-mono text-sm px-4 py-2.5 rounded-md bg-teal text-ink font-medium hover:brightness-110 transition">
+          <a href="https://github.com/KEHEM-IT/WebDataStudio/releases/download/v1.0.0/dist.zip" download class="inline-flex items-center gap-2 font-mono text-sm px-4 py-2.5 rounded-md bg-teal text-ink font-medium hover:brightness-110 transition">
             <i class="fa-solid fa-download"></i> Get the extension
           </a>
           <a href="#demo" class="inline-flex items-center gap-2 font-mono text-sm px-4 py-2.5 rounded-md border border-line hover:border-teal hover:text-teal transition-colors">
@@ -439,7 +535,7 @@
           <div class="ml-2 flex-1 font-mono text-[11px] text-muted bg-ink/60 rounded px-2 py-1">install.sh</div>
         </div>
         <div class="p-6 font-mono text-sm leading-loose">
-          <p><span class="text-teal">1</span> <span class="text-muted">download</span> dist.zip <span class="text-muted">from</span> <a href="https://github.com/KEHEM-IT/WebDataStudio/releases/latest" class="text-amber hover:underline">Releases</a></p>
+          <p><span class="text-teal">1</span> <span class="text-muted">download</span> <a href="https://github.com/KEHEM-IT/WebDataStudio/releases/download/v1.0.0/dist.zip" download class="text-amber hover:underline">dist.zip</a></p>
           <p><span class="text-teal">2</span> <span class="text-muted">unzip</span> dist.zip</p>
           <p><span class="text-teal">3</span> <span class="text-muted">open</span> chrome://extensions</p>
           <p><span class="text-teal">4</span> <span class="text-muted">enable</span> "Developer mode"</p>
@@ -467,6 +563,59 @@
       <div class="flex items-start gap-3 text-muted"><i class="fa-regular fa-square mt-0.5 text-line"></i> AI-assisted detection &amp; cleaning</div>
       <div class="flex items-start gap-3 text-muted"><i class="fa-regular fa-square mt-0.5 text-line"></i> Excel / ODS export</div>
       <div class="flex items-start gap-3 text-muted"><i class="fa-regular fa-square mt-0.5 text-line"></i> MongoDB / PostgreSQL / MySQL export targets</div>
+    </div>
+  </section>
+
+  <!-- ============ FAQ (mirrors the FAQPage JSON-LD in <head>) ============ -->
+  <section id="faq" class="border-t border-line bg-panel/40">
+    <div class="max-w-6xl mx-auto px-5 py-20 md:py-28">
+      <p class="tag-eyebrow text-teal text-sm">&lt;faq&gt;</p>
+      <h2 class="mt-3 text-3xl md:text-4xl font-semibold tracking-tight max-w-xl">Frequently asked questions</h2>
+
+      <div class="mt-10 max-w-3xl divide-y divide-line border-t border-b border-line">
+        <details class="group py-5">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-paper list-none">
+            What is Web Data Studio?
+            <i class="fa-solid fa-chevron-down text-muted text-sm group-open:rotate-180 transition-transform"></i>
+          </summary>
+          <p class="mt-3 text-sm text-muted leading-relaxed">
+            Web Data Studio is a free, open-source Chrome extension that visually detects and extracts tables,
+            lists, cards, and grids from any webpage, then lets you clean, transform, and export the data
+            locally — with no server and no tracking.
+          </p>
+        </details>
+        <details class="group py-5">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-paper list-none">
+            What formats can Web Data Studio export to?
+            <i class="fa-solid fa-chevron-down text-muted text-sm group-open:rotate-180 transition-transform"></i>
+          </summary>
+          <p class="mt-3 text-sm text-muted leading-relaxed">
+            Web Data Studio exports to JSON, JSON Lines, CSV, TSV, Markdown, HTML, XML, YAML, and SQL
+            <code class="font-mono text-xs">INSERT</code> statements, with a live preview and one-click copy
+            or download.
+          </p>
+        </details>
+        <details class="group py-5">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-paper list-none">
+            Is Web Data Studio free?
+            <i class="fa-solid fa-chevron-down text-muted text-sm group-open:rotate-180 transition-transform"></i>
+          </summary>
+          <p class="mt-3 text-sm text-muted leading-relaxed">
+            Yes. Web Data Studio is free and open source under the MIT License, distributed as a ready-to-use
+            dist.zip on its GitHub Releases page.
+          </p>
+        </details>
+        <details class="group py-5">
+          <summary class="flex cursor-pointer items-center justify-between font-medium text-paper list-none">
+            Does Web Data Studio send my data anywhere?
+            <i class="fa-solid fa-chevron-down text-muted text-sm group-open:rotate-180 transition-transform"></i>
+          </summary>
+          <p class="mt-3 text-sm text-muted leading-relaxed">
+            No. All detection, extraction, cleaning, and export happen locally inside your browser. Web Data
+            Studio does not use a server and does not track usage.
+          </p>
+        </details>
+      </div>
     </div>
   </section>
 
