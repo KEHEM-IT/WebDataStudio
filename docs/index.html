@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Web Data Studio — Documentation</title>
+<meta name="description" content="Web Data Studio: a visual web data extraction and transformation platform for Chrome. Pick, preview, clean, and export data from any page." />
+<link rel="icon" type="image/png" sizes="32x32" href="../public/icons/icon32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="../public/icons/icon16.png" />
+<link rel="apple-touch-icon" href="../public/icons/icon128.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://surajit-singha-sisir.github.io/FontAwesome-6-Pro/css/all.css" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: '#0D1117',
+          panel: '#131922',
+          panel2: '#161D28',
+          line: '#26303C',
+          muted: '#8B98A9',
+          paper: '#E6EDF3',
+          teal: '#56D4C2',
+          amber: '#E3B341',
+        },
+        fontFamily: {
+          mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
+          sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  :root { color-scheme: dark; }
+  body { background: #0D1117; }
+
+  /* Browser-chrome frame: every screenshot/video lives inside one of these */
+  .chrome-frame {
+    border: 1px solid #26303C;
+    border-radius: 12px;
+    background: #131922;
+    overflow: hidden;
+    box-shadow: 0 30px 80px -30px rgba(0,0,0,0.6);
+  }
+  .chrome-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    background: #10151D;
+    border-bottom: 1px solid #26303C;
+  }
+  .chrome-dot { width: 9px; height: 9px; border-radius: 999px; }
+
+  /* Signature hover interaction: dashed selection -> solid, like the element picker */
+  .pick-card {
+    border: 1.5px dashed #2E3947;
+    transition: border-color .25s ease, transform .25s ease, background .25s ease;
+  }
+  .pick-card:hover {
+    border-style: solid;
+    border-color: #56D4C2;
+    transform: translateY(-3px);
+    background: #151C27;
+  }
+
+  .tag-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.02em;
+  }
+
+  ::selection { background: #56D4C2; color: #0D1117; }
+
+  .fade-up {
+    opacity: 0;
+    transform: translateY(14px);
+    animation: fadeUp .7s ease forwards;
+  }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fade-up { animation: none; opacity: 1; transform: none; }
+    .pick-card { transition: none; }
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #0D1117; }
+  ::-webkit-scrollbar-thumb { background: #26303C; border-radius: 999px; }
+</style>
+</head>
+
+<body class="font-sans text-paper antialiased">
+
+  <!-- ============ NAV (styled like a browser tab/toolbar) ============ -->
+  <header class="sticky top-0 z-50 backdrop-blur bg-ink/85 border-b border-line">
+    <div class="max-w-6xl mx-auto px-5">
+      <div class="flex items-center gap-2 pt-3">
+        <span class="chrome-dot bg-[#3a4552]"></span>
+        <span class="chrome-dot bg-[#3a4552]"></span>
+        <span class="chrome-dot bg-[#3a4552]"></span>
+        <div class="ml-3 font-mono text-xs text-muted bg-panel2 border border-line rounded-md px-3 py-1 truncate">
+          chrome-extension://web-data-studio/docs
+        </div>
+      </div>
+      <nav class="flex items-center justify-between py-3">
+        <a href="#top" class="flex items-center gap-2.5">
+          <img src="../public/icons/icon48.png" alt="Web Data Studio logo" class="w-7 h-7 rounded-md" />
+          <span class="font-mono font-semibold tracking-tight">Web&nbsp;Data&nbsp;Studio</span>
+        </a>
+        <div class="hidden md:flex items-center gap-6 font-mono text-sm text-muted">
+          <a href="#features" class="hover:text-teal transition-colors">features</a>
+          <a href="#demo" class="hover:text-teal transition-colors">demo</a>
+          <a href="#screenshots" class="hover:text-teal transition-colors">screenshots</a>
+          <a href="#install" class="hover:text-teal transition-colors">install</a>
+          <a href="#roadmap" class="hover:text-teal transition-colors">roadmap</a>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="../../../releases" class="hidden sm:inline-flex items-center gap-2 text-sm font-mono px-3 py-1.5 rounded-md border border-line text-paper hover:border-teal hover:text-teal transition-colors">
+            <i class="fa-brands fa-github"></i> GitHub
+          </a>
+          <a href="../../../releases/latest" class="inline-flex items-center gap-2 text-sm font-mono px-3 py-1.5 rounded-md bg-teal text-ink font-medium hover:brightness-110 transition">
+            <i class="fa-solid fa-download"></i> Download
+          </a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ============ HERO ============ -->
+  <section id="top" class="relative overflow-hidden border-b border-line">
+    <div class="pointer-events-none absolute inset-0 opacity-[0.05]"
+         style="background-image:radial-gradient(#56D4C2 1px, transparent 1px); background-size: 22px 22px;"></div>
+
+    <div class="max-w-6xl mx-auto px-5 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center relative">
+      <div class="fade-up">
+        <div class="inline-flex items-center gap-2 font-mono text-xs text-teal bg-teal/10 border border-teal/25 rounded-full px-3 py-1 mb-6">
+          <i class="fa-solid fa-crosshairs"></i> v1.0.0 — Manifest V3
+        </div>
+        <h1 class="font-mono text-4xl md:text-5xl leading-[1.1] font-semibold tracking-tight">
+          <span class="text-muted">&lt;</span>select<span class="text-muted">&gt;</span> any element.<br />
+          <span class="text-teal">extract()</span> clean data.<br />
+          <span class="text-muted">&lt;/</span>export<span class="text-muted">&gt;</span> anywhere.
+        </h1>
+        <p class="mt-6 text-muted text-lg max-w-md leading-relaxed">
+          Web Data Studio turns tables, cards, lists and grids on any page into clean, structured
+          data — picked visually, previewed live, and exported in the format you need. All local,
+          no server, no tracking.
+        </p>
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          <a href="../../../releases/latest" class="inline-flex items-center gap-2 font-mono text-sm px-4 py-2.5 rounded-md bg-teal text-ink font-medium hover:brightness-110 transition">
+            <i class="fa-solid fa-download"></i> Get the extension
+          </a>
+          <a href="#demo" class="inline-flex items-center gap-2 font-mono text-sm px-4 py-2.5 rounded-md border border-line hover:border-teal hover:text-teal transition-colors">
+            <i class="fa-solid fa-play"></i> Watch the demo
+          </a>
+        </div>
+        <div class="mt-8 flex flex-wrap items-center gap-2 font-mono text-xs text-muted">
+          <span class="border border-line rounded px-2 py-1">Manifest V3</span>
+          <span class="border border-line rounded px-2 py-1">TypeScript</span>
+          <span class="border border-line rounded px-2 py-1">Vite</span>
+          <span class="border border-line rounded px-2 py-1">MIT License</span>
+        </div>
+      </div>
+
+      <div class="fade-up" style="animation-delay:.15s">
+        <div class="chrome-frame">
+          <div class="chrome-bar">
+            <span class="chrome-dot bg-[#E3B341]"></span>
+            <span class="chrome-dot bg-[#56D4C2]"></span>
+            <span class="chrome-dot bg-[#3a4552]"></span>
+            <div class="ml-2 flex-1 font-mono text-[11px] text-muted bg-ink/60 rounded px-2 py-1 truncate">
+              your-page.com — Web Data Studio
+            </div>
+          </div>
+          <img src="images/banner.png" alt="Web Data Studio overview" class="w-full block" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FEATURES ============ -->
+  <section id="features" class="max-w-6xl mx-auto px-5 py-20 md:py-28">
+    <div class="max-w-2xl">
+      <p class="tag-eyebrow text-teal text-sm">&lt;features&gt;</p>
+      <h2 class="mt-3 text-3xl md:text-4xl font-semibold tracking-tight">Everything between "select" and "export"</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        Six modules that take you from a messy page to a clean dataset. Hover a card —
+        it behaves like the picker itself.
+      </p>
+    </div>
+
+    <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+      <div class="pick-card rounded-xl p-6">
+        <div class="w-10 h-10 rounded-lg bg-teal/10 border border-teal/25 flex items-center justify-center text-teal">
+          <i class="fa-solid fa-magnifying-glass-chart"></i>
+        </div>
+        <p class="tag-eyebrow text-xs text-muted mt-5">&lt;detect /&gt;</p>
+        <h3 class="mt-1.5 font-semibold text-lg">Smart Detection</h3>
+        <p class="mt-2 text-sm text-muted leading-relaxed">
+          Finds native tables, semantic lists, and repeated card/grid patterns automatically —
+          and fingerprints libraries like AG Grid, Tabulator, Handsontable, Kendo Grid,
+          DataTables, Bootstrap Table, PrimeVue, Vuetify, Element Plus, Ant Design and MUI.
+        </p>
+      </div>
+
+      <div class="pick-card rounded-xl p-6">
+        <div class="w-10 h-10 rounded-lg bg-amber/10 border border-amber/25 flex items-center justify-center text-amber">
+          <i class="fa-solid fa-crosshairs"></i>
+        </div>
+        <p class="tag-eyebrow text-xs text-muted mt-5">&lt;picker /&gt;</p>
+        <h3 class="mt-1.5 font-semibold text-lg">Visual Element Picker</h3>
+        <p class="mt-2 text-sm text-muted leading-relaxed">
+          A DevTools-style inspector overlay. Hover to highlight, click to select — right from
+          the popup, the side panel, or <kbd class="font-mono text-xs bg-panel2 border border-line rounded px-1">Ctrl+Shift+P</kbd>.
+        </p>
+      </div>
+
+      <div class="pick-card rounded-xl p-6">
+        <div class="w-10 h-10 rounded-lg bg-teal/10 border border-teal/25 flex items-center justify-center text-teal">
+          <i class="fa-solid fa-table-cells"></i>
+        </div>
+        <p class="tag-eyebrow text-xs text-muted mt-5">&lt;preview /&gt;</p>
+        <h3 class="mt-1.5 font-semibold text-lg">Live Preview &amp; Cleaning</h3>
+        <p class="mt-2 text-sm text-muted leading-relaxed">
+          An editable preview table — click any cell to edit, drop rows or columns inline.
+          One-click trim, de-duplicate, and case conversion (UPPER / lower / Title).
+        </p>
+      </div>
+
+      <div class="pick-card rounded-xl p-6">
+        <div class="w-10 h-10 rounded-lg bg-amber/10 border border-amber/25 flex items-center justify-center text-amber">
+          <i class="fa-solid fa-images"></i>
+        </div>
+        <p class="tag-eyebrow text-xs text-muted mt-5">&lt;resources /&gt;</p>
+        <h3 class="mt-1.5 font-semibold text-lg">File &amp; Resource Extractor</h3>
+        <p class="mt-2 text-sm text-muted leading-relaxed">
+          Finds every image, video and audio file on the page. Select what you need and zip
+          it for download — entirely in the browser, no upload required.
+        </p>
+      </div>
+
+      <div class="pick-card rounded-xl p-6">
+        <div class="w-10 h-10 rounded-lg bg-teal/10 border border-teal/25 flex items-center justify-center text-teal">
+          <i class="fa-solid fa-file-export"></i>
+        </div>
+        <p class="tag-eyebrow text-xs text-muted mt-5">&lt;export /&gt;</p>
+        <h3 class="mt-1.5 font-semibold text-lg">Export Studio</h3>
+        <p class="mt-2 text-sm text-muted leading-relaxed">
+          JSON, JSON Lines, CSV, TSV, Markdown, HTML, XML, YAML, or SQL <code class="font-mono text-xs">INSERT</code>
+          statements — with a live preview pane and one-click copy or download.
+        </p>
+      </div>
+
+      <div class="pick-card rounded-xl p-6">
+        <div class="w-10 h-10 rounded-lg bg-amber/10 border border-amber/25 flex items-center justify-center text-amber">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+        <p class="tag-eyebrow text-xs text-muted mt-5">&lt;history /&gt;</p>
+        <h3 class="mt-1.5 font-semibold text-lg">History</h3>
+        <p class="mt-2 text-sm text-muted leading-relaxed">
+          Every extraction is saved locally, so you can revisit or re-export a past session
+          without re-scanning the page.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ DEMO ============ -->
+  <section id="demo" class="border-y border-line bg-panel/40">
+    <div class="max-w-6xl mx-auto px-5 py-20 md:py-28">
+      <p class="tag-eyebrow text-teal text-sm">&lt;demo&gt;</p>
+      <h2 class="mt-3 text-3xl md:text-4xl font-semibold tracking-tight max-w-xl">
+        Ten seconds is enough to see it work
+      </h2>
+
+      <div class="mt-10 chrome-frame max-w-3xl mx-auto">
+        <div class="chrome-bar">
+          <span class="chrome-dot bg-[#E3B341]"></span>
+          <span class="chrome-dot bg-[#56D4C2]"></span>
+          <span class="chrome-dot bg-[#3a4552]"></span>
+          <div class="ml-2 flex-1 font-mono text-[11px] text-muted bg-ink/60 rounded px-2 py-1 truncate">
+            quick-demo.mp4 — 0:10
+          </div>
+        </div>
+        <video class="w-full block" src="images/demo.mp4" autoplay loop muted playsinline controls></video>
+      </div>
+
+      <div class="mt-16 flex items-start justify-between flex-wrap gap-6">
+        <div class="max-w-lg">
+          <p class="tag-eyebrow text-amber text-sm">&lt;walkthrough&gt;</p>
+          <h3 class="mt-3 text-2xl font-semibold tracking-tight">Full feature walkthrough</h3>
+          <p class="mt-3 text-muted leading-relaxed">
+            A complete tour — detection, picking, cleaning, transforming, exporting, and
+            everything in between.
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-6 chrome-frame">
+        <div class="chrome-bar">
+          <span class="chrome-dot bg-[#E3B341]"></span>
+          <span class="chrome-dot bg-[#56D4C2]"></span>
+          <span class="chrome-dot bg-[#3a4552]"></span>
+          <div class="ml-2 flex-1 font-mono text-[11px] text-muted bg-ink/60 rounded px-2 py-1 truncate">
+            full-feature-walkthrough.mp4
+          </div>
+        </div>
+        <video class="w-full block" src="images/full-feature-walkthrough.mp4" controls preload="metadata"></video>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SCREENSHOTS ============ -->
+  <section id="screenshots" class="max-w-6xl mx-auto px-5 py-20 md:py-28">
+    <p class="tag-eyebrow text-teal text-sm">&lt;screenshots&gt;</p>
+    <h2 class="mt-3 text-3xl md:text-4xl font-semibold tracking-tight max-w-xl">
+      Every panel, in the browser it lives in
+    </h2>
+    <p class="mt-4 text-muted max-w-xl leading-relaxed">Click any frame to zoom in.</p>
+
+    <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6" id="gallery">
+
+      <button class="gallery-item text-left group" data-src="images/popup.png" data-caption="Popup — quick actions">
+        <div class="chrome-frame group-hover:border-teal/50 transition-colors">
+          <div class="chrome-bar"><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span></div>
+          <img src="images/popup.png" alt="Popup — quick actions" class="w-full block" />
+        </div>
+        <p class="mt-2 font-mono text-xs text-muted">Popup — quick actions</p>
+      </button>
+
+      <button class="gallery-item text-left group" data-src="images/popup1.png" data-caption="Popup — detected data">
+        <div class="chrome-frame group-hover:border-teal/50 transition-colors">
+          <div class="chrome-bar"><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span></div>
+          <img src="images/popup1.png" alt="Popup — detected data" class="w-full block" />
+        </div>
+        <p class="mt-2 font-mono text-xs text-muted">Popup — detected data</p>
+      </button>
+
+      <button class="gallery-item text-left group" data-src="images/explorer.png" data-caption="Explorer — candidates">
+        <div class="chrome-frame group-hover:border-teal/50 transition-colors">
+          <div class="chrome-bar"><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span></div>
+          <img src="images/explorer.png" alt="Explorer — candidates" class="w-full block" />
+        </div>
+        <p class="mt-2 font-mono text-xs text-muted">Explorer — candidates</p>
+      </button>
+
+      <button class="gallery-item text-left group" data-src="images/explorer1.png" data-caption="Explorer — detail view">
+        <div class="chrome-frame group-hover:border-teal/50 transition-colors">
+          <div class="chrome-bar"><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span></div>
+          <img src="images/explorer1.png" alt="Explorer — detail view" class="w-full block" />
+        </div>
+        <p class="mt-2 font-mono text-xs text-muted">Explorer — detail view</p>
+      </button>
+
+      <button class="gallery-item text-left group" data-src="images/preview.png" data-caption="Preview — editable table">
+        <div class="chrome-frame group-hover:border-teal/50 transition-colors">
+          <div class="chrome-bar"><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span></div>
+          <img src="images/preview.png" alt="Preview — editable table" class="w-full block" />
+        </div>
+        <p class="mt-2 font-mono text-xs text-muted">Preview — editable table</p>
+      </button>
+
+      <button class="gallery-item text-left group" data-src="images/preview1.png" data-caption="Preview — cleaning tools">
+        <div class="chrome-frame group-hover:border-teal/50 transition-colors">
+          <div class="chrome-bar"><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span></div>
+          <img src="images/preview1.png" alt="Preview — cleaning tools" class="w-full block" />
+        </div>
+        <p class="mt-2 font-mono text-xs text-muted">Preview — cleaning tools</p>
+      </button>
+
+      <button class="gallery-item text-left group" data-src="images/files.png" data-caption="Files — resource extractor">
+        <div class="chrome-frame group-hover:border-teal/50 transition-colors">
+          <div class="chrome-bar"><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span></div>
+          <img src="images/files.png" alt="Files — resource extractor" class="w-full block" />
+        </div>
+        <p class="mt-2 font-mono text-xs text-muted">Files — resource extractor</p>
+      </button>
+
+      <button class="gallery-item text-left group" data-src="images/export.png" data-caption="Export Studio">
+        <div class="chrome-frame group-hover:border-teal/50 transition-colors">
+          <div class="chrome-bar"><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span></div>
+          <img src="images/export.png" alt="Export Studio" class="w-full block" />
+        </div>
+        <p class="mt-2 font-mono text-xs text-muted">Export Studio</p>
+      </button>
+
+      <button class="gallery-item text-left group" data-src="images/history.png" data-caption="History">
+        <div class="chrome-frame group-hover:border-teal/50 transition-colors">
+          <div class="chrome-bar"><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span><span class="chrome-dot bg-[#3a4552]"></span></div>
+          <img src="images/history.png" alt="History" class="w-full block" />
+        </div>
+        <p class="mt-2 font-mono text-xs text-muted">History</p>
+      </button>
+
+    </div>
+  </section>
+
+  <!-- Lightbox -->
+  <div id="lightbox" class="fixed inset-0 z-[100] hidden items-center justify-center bg-ink/90 backdrop-blur-sm p-6">
+    <button id="lightbox-close" class="absolute top-6 right-6 text-muted hover:text-teal text-2xl">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+    <figure class="max-w-4xl w-full">
+      <div class="chrome-frame">
+        <div class="chrome-bar"><span class="chrome-dot bg-[#E3B341]"></span><span class="chrome-dot bg-[#56D4C2]"></span><span class="chrome-dot bg-[#3a4552]"></span></div>
+        <img id="lightbox-img" src="" alt="" class="w-full block" />
+      </div>
+      <figcaption id="lightbox-caption" class="mt-3 font-mono text-sm text-muted text-center"></figcaption>
+    </figure>
+  </div>
+
+  <!-- ============ INSTALL ============ -->
+  <section id="install" class="border-t border-line bg-panel/40">
+    <div class="max-w-6xl mx-auto px-5 py-20 md:py-28">
+      <p class="tag-eyebrow text-teal text-sm">&lt;install&gt;</p>
+      <h2 class="mt-3 text-3xl md:text-4xl font-semibold tracking-tight max-w-xl">
+        Five commands, no build step
+      </h2>
+      <p class="mt-4 text-muted max-w-xl leading-relaxed">
+        Stable builds ship as a ready-to-use <code class="font-mono text-sm bg-panel2 border border-line rounded px-1.5 py-0.5">dist.zip</code>
+        on the Releases page.
+      </p>
+
+      <div class="mt-10 max-w-2xl chrome-frame">
+        <div class="chrome-bar">
+          <span class="chrome-dot bg-[#E3B341]"></span>
+          <span class="chrome-dot bg-[#56D4C2]"></span>
+          <span class="chrome-dot bg-[#3a4552]"></span>
+          <div class="ml-2 flex-1 font-mono text-[11px] text-muted bg-ink/60 rounded px-2 py-1">install.sh</div>
+        </div>
+        <div class="p-6 font-mono text-sm leading-loose">
+          <p><span class="text-teal">1</span> <span class="text-muted">download</span> dist.zip <span class="text-muted">from</span> <a href="../../../releases/latest" class="text-amber hover:underline">Releases</a></p>
+          <p><span class="text-teal">2</span> <span class="text-muted">unzip</span> dist.zip</p>
+          <p><span class="text-teal">3</span> <span class="text-muted">open</span> chrome://extensions</p>
+          <p><span class="text-teal">4</span> <span class="text-muted">enable</span> "Developer mode"</p>
+          <p><span class="text-teal">5</span> <span class="text-muted">click</span> "Load unpacked" <span class="text-muted">→ select the unzipped folder</span></p>
+        </div>
+      </div>
+
+      <p class="mt-6 font-mono text-sm text-muted">
+        Then pin the extension and press <kbd class="bg-panel2 border border-line rounded px-1.5 py-0.5 text-xs">Ctrl+Shift+D</kbd> to open it.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ ROADMAP ============ -->
+  <section id="roadmap" class="max-w-6xl mx-auto px-5 py-20 md:py-28">
+    <p class="tag-eyebrow text-teal text-sm">&lt;roadmap&gt;</p>
+    <h2 class="mt-3 text-3xl md:text-4xl font-semibold tracking-tight max-w-xl">What's queued up next</h2>
+
+    <div class="mt-10 grid md:grid-cols-2 gap-x-12 gap-y-4 max-w-3xl font-mono text-sm">
+      <div class="flex items-start gap-3 text-muted"><i class="fa-regular fa-square mt-0.5 text-line"></i> Automation Studio — auto-refresh, DOM-watch, scheduled &amp; batch extraction</div>
+      <div class="flex items-start gap-3 text-muted"><i class="fa-regular fa-square mt-0.5 text-line"></i> Workspace manager — saved selectors, templates, transform presets</div>
+      <div class="flex items-start gap-3 text-muted"><i class="fa-regular fa-square mt-0.5 text-line"></i> Advanced Data Transformation Studio — calculated columns, regex, custom JS</div>
+      <div class="flex items-start gap-3 text-muted"><i class="fa-regular fa-square mt-0.5 text-line"></i> JSON Studio — schema &amp; model generation (TS / Java / C# / Python / Dart)</div>
+      <div class="flex items-start gap-3 text-muted"><i class="fa-regular fa-square mt-0.5 text-line"></i> Plugin system — custom extractors, exporters, transformers</div>
+      <div class="flex items-start gap-3 text-muted"><i class="fa-regular fa-square mt-0.5 text-line"></i> AI-assisted detection &amp; cleaning</div>
+      <div class="flex items-start gap-3 text-muted"><i class="fa-regular fa-square mt-0.5 text-line"></i> Excel / ODS export</div>
+      <div class="flex items-start gap-3 text-muted"><i class="fa-regular fa-square mt-0.5 text-line"></i> MongoDB / PostgreSQL / MySQL export targets</div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="border-t border-line">
+    <div class="max-w-6xl mx-auto px-5 py-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      <div class="flex items-center gap-2.5">
+        <img src="../public/icons/icon32.png" alt="Web Data Studio logo" class="w-6 h-6 rounded" />
+        <span class="font-mono text-sm text-muted">Web Data Studio — MIT Licensed</span>
+      </div>
+      <div class="flex items-center gap-5 font-mono text-sm text-muted">
+        <a href="../README.md" class="hover:text-teal transition-colors">README</a>
+        <a href="../LICENSE" class="hover:text-teal transition-colors">License</a>
+        <a href="../../../releases" class="hover:text-teal transition-colors">Releases</a>
+        <a href="../../../issues" class="hover:text-teal transition-colors">Issues</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var lightbox = document.getElementById('lightbox');
+      var img = document.getElementById('lightbox-img');
+      var caption = document.getElementById('lightbox-caption');
+      var items = document.querySelectorAll('.gallery-item');
+
+      items.forEach(function (item) {
+        item.addEventListener('click', function () {
+          img.src = item.getAttribute('data-src');
+          img.alt = item.getAttribute('data-caption') || '';
+          caption.textContent = item.getAttribute('data-caption') || '';
+          lightbox.classList.remove('hidden');
+          lightbox.classList.add('flex');
+          document.body.style.overflow = 'hidden';
+        });
+      });
+
+      function closeLightbox() {
+        lightbox.classList.add('hidden');
+        lightbox.classList.remove('flex');
+        img.src = '';
+        document.body.style.overflow = '';
+      }
+
+      document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+      lightbox.addEventListener('click', function (e) {
+        if (e.target === lightbox) closeLightbox();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeLightbox();
+      });
+    })();
+  </script>
+
+</body>
+</html>
