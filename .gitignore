@@ -4,3 +4,6 @@ dist/
 .DS_Store
 .vite/
 *.tsbuildinfo
+
+# Git Auto Commit Generator learned data
+.git-auto-commit/
